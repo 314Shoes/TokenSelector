@@ -16,6 +16,10 @@
 		AA000007 /* TokenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000007 /* TokenView.swift */; };
 		AA000008 /* ColorHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000008 /* ColorHelper.swift */; };
 		AA000009 /* UseTokenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000009 /* UseTokenView.swift */; };
+		AA000010 /* TreasureChestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000010 /* TreasureChestView.swift */; };
+		AA000011 /* TreasureChestScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000011 /* TreasureChestScreen.swift */; };
+		AA000012 /* TokenStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000012 /* TokenStorage.swift */; };
+		AA000013 /* CoinTokenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000013 /* CoinTokenView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +32,10 @@
 		AB000007 /* TokenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenView.swift; sourceTree = "<group>"; };
 		AB000008 /* ColorHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHelper.swift; sourceTree = "<group>"; };
 		AB000009 /* UseTokenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UseTokenView.swift; sourceTree = "<group>"; };
+		AB000010 /* TreasureChestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasureChestView.swift; sourceTree = "<group>"; };
+		AB000011 /* TreasureChestScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreasureChestScreen.swift; sourceTree = "<group>"; };
+		AB000012 /* TokenStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStorage.swift; sourceTree = "<group>"; };
+		AB000013 /* CoinTokenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTokenView.swift; sourceTree = "<group>"; };
 		AC000001 /* TokenSelector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TokenSelector.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -70,6 +78,9 @@
 				AB000006 /* ShapeSelectionView.swift */,
 				AB000007 /* TokenView.swift */,
 				AB000009 /* UseTokenView.swift */,
+				AB000010 /* TreasureChestView.swift */,
+				AB000011 /* TreasureChestScreen.swift */,
+				AB000013 /* CoinTokenView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -78,6 +89,7 @@
 			isa = PBXGroup;
 			children = (
 				AB000008 /* ColorHelper.swift */,
+				AB000012 /* TokenStorage.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -167,6 +179,10 @@
 				AA000007 /* TokenView.swift in Sources */,
 				AA000008 /* ColorHelper.swift in Sources */,
 				AA000009 /* UseTokenView.swift in Sources */,
+				AA000010 /* TreasureChestView.swift in Sources */,
+				AA000011 /* TreasureChestScreen.swift in Sources */,
+				AA000012 /* TokenStorage.swift in Sources */,
+				AA000013 /* CoinTokenView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

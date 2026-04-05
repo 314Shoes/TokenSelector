@@ -5,6 +5,21 @@ struct ShapeSelectionView: View {
     let colorChoice: ColorChoice
     let onSelect: (ShapeChoice) -> Void
     
+    @State private var crossScale: CGFloat = 0
+    @State private var shapesOpacity: Double = 0.0
+    @State private var wipeOffset: CGFloat = 0
+    @State private var hasAppeared = false
+    
+    // Post-selection animation state
+    @State private var pickedShape: ShapeChoice? = nil
+    @State private var tokenX: CGFloat = 0
+    @State private var tokenY: CGFloat = 0
+    @State private var tokenSize: CGFloat = 0
+    @State private var tokenRotation: Double = 0
+    @State private var tokenXAngle: Double = 0
+    @State private var tokenYAngle: Double = 0
+    @State private var fadeWhite: Double = 0
+    
     private var bgColor: Color {
         ColorHelper.resolve(color: colorChoice, shade: shade)
     }
@@ -14,137 +29,212 @@ struct ShapeSelectionView: View {
             let w = geo.size.width / 2
             let h = geo.size.height / 2
             
-            VStack(spacing: 0) {
-                HStack(spacing: 0) {
-                    // Upper-left: Square
-                    Button {
-                        onSelect(.square)
-                    } label: {
+            ZStack {
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        // Upper-left: Square
                         ZStack {
                             bgColor
                             SquareShape()
-                                .fill(.white)
-                                .frame(width: min(w, h) * 0.4, height: min(w, h) * 0.4)
-                                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                                .fill(bgColor)
+                                .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                .opacity(shapesOpacity)
+                                .overlay(
+                                    SquareShape()
+                                        .stroke(Color.black, lineWidth: 3)
+                                        .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                        .opacity(shapesOpacity)
+                                )
                         }
                         .frame(width: w, height: h)
-                        .overlay(
-                            Rectangle()
-                                .frame(width: nil, height: 0.5)
-                                .foregroundColor(.white.opacity(0.25)),
-                            alignment: .bottom
-                        )
-                        .overlay(
-                            Rectangle()
-                                .frame(width: 0.5, height: nil)
-                                .foregroundColor(.white.opacity(0.25)),
-                            alignment: .trailing
-                        )
-                    }
-                    
-                    // Upper-right: Circle
-                    Button {
-                        onSelect(.circle)
-                    } label: {
+                        .contentShape(SquareShape())
+                        .onTapGesture { selectShape(.square, geo: geo) }
+                        
+                        // Upper-right: Circle
                         ZStack {
                             bgColor
                             Circle()
-                                .fill(.white)
-                                .frame(width: min(w, h) * 0.4, height: min(w, h) * 0.4)
-                                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                                .fill(bgColor)
+                                .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                .opacity(shapesOpacity)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.black, lineWidth: 3)
+                                        .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                        .opacity(shapesOpacity)
+                                )
                         }
                         .frame(width: w, height: h)
-                        .overlay(
-                            Rectangle()
-                                .frame(width: nil, height: 0.5)
-                                .foregroundColor(.white.opacity(0.25)),
-                            alignment: .bottom
-                        )
+                        .contentShape(Circle())
+                        .onTapGesture { selectShape(.circle, geo: geo) }
                     }
-                }
-                
-                HStack(spacing: 0) {
-                    // Lower-left: Triangle Up
-                    Button {
-                        onSelect(.triangleUp)
-                    } label: {
+                    
+                    HStack(spacing: 0) {
+                        // Lower-left: Triangle Up
                         ZStack {
                             bgColor
                             TriangleUp()
-                                .fill(.white)
-                                .frame(width: min(w, h) * 0.4, height: min(w, h) * 0.4)
-                                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                                .fill(bgColor)
+                                .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                .opacity(shapesOpacity)
+                                .overlay(
+                                    TriangleUp()
+                                        .stroke(Color.black, lineWidth: 3)
+                                        .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                        .opacity(shapesOpacity)
+                                )
                         }
                         .frame(width: w, height: h)
-                        .overlay(
-                            Rectangle()
-                                .frame(width: 0.5, height: nil)
-                                .foregroundColor(.white.opacity(0.25)),
-                            alignment: .trailing
-                        )
-                    }
-                    
-                    // Lower-right: Triangle Down
-                    Button {
-                        onSelect(.triangleDown)
-                    } label: {
+                        .contentShape(TriangleUp())
+                        .onTapGesture { selectShape(.triangleUp, geo: geo) }
+                        
+                        // Lower-right: Triangle Down
                         ZStack {
                             bgColor
                             TriangleDown()
-                                .fill(.white)
-                                .frame(width: min(w, h) * 0.4, height: min(w, h) * 0.4)
-                                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                                .fill(bgColor)
+                                .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                .opacity(shapesOpacity)
+                                .overlay(
+                                    TriangleDown()
+                                        .stroke(Color.black, lineWidth: 3)
+                                        .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                        .opacity(shapesOpacity)
+                                )
                         }
                         .frame(width: w, height: h)
+                        .contentShape(TriangleDown())
+                        .onTapGesture { selectShape(.triangleDown, geo: geo) }
+                    }
+                }
+                
+                // Solid color overlay — fades out to reveal shapes underneath
+                bgColor
+                    .ignoresSafeArea()
+                    .opacity(1.0 - wipeOffset)
+                    .allowsHitTesting(false)
+                
+                // Black cross — expands from center dot
+                CrossShape()
+                    .stroke(Color.black, lineWidth: 2)
+                    .frame(width: geo.size.width * crossScale, height: geo.size.height * crossScale)
+                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                    .allowsHitTesting(false)
+                
+                // Fade to white overlay
+                Color.white
+                    .ignoresSafeArea()
+                    .opacity(fadeWhite)
+                    .allowsHitTesting(false)
+                
+                // Cartwheeling token
+                if let shape = pickedShape {
+                    CoinTokenView(
+                        shade: shade,
+                        colorChoice: colorChoice,
+                        shapeChoice: shape,
+                        xAngle: tokenXAngle,
+                        yAngle: tokenYAngle
+                    )
+                        .frame(width: tokenSize, height: tokenSize)
+                        .rotationEffect(.degrees(tokenRotation))
+                        .position(x: tokenX, y: tokenY)
+                        .allowsHitTesting(false)
+                }
+            }
+            .onAppear {
+                guard !hasAppeared else { return }
+                hasAppeared = true
+                withAnimation(.easeInOut(duration: 4.0)) {
+                    wipeOffset = 1.0
+                }
+                // Cross expands from center (0.5s after wipe starts)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    withAnimation(.easeOut(duration: 0.8)) {
+                        crossScale = 1.0
+                    }
+                }
+                // Shapes fade in after cross expansion
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                    withAnimation(.easeIn(duration: 0.6)) {
+                        shapesOpacity = 1.0
                     }
                 }
             }
         }
-        .buttonStyle(.plain)
+    }
+    
+    // MARK: - Shape Selection + Cartwheel Animation
+    
+    private func selectShape(_ shape: ShapeChoice, geo: GeometryProxy) {
+        guard pickedShape == nil else { return }
+        pickedShape = shape
+        
+        let w = geo.size.width / 2
+        let h = geo.size.height / 2
+        
+        // Shape quadrant centers
+        let origin: CGPoint
+        switch shape {
+        case .square:      origin = CGPoint(x: w / 2, y: h / 2)
+        case .circle:      origin = CGPoint(x: w + w / 2, y: h / 2)
+        case .triangleUp:  origin = CGPoint(x: w / 2, y: h + h / 2)
+        case .triangleDown: origin = CGPoint(x: w + w / 2, y: h + h / 2)
+        }
+        
+        // Start: token at exact same position and size as black outline shape
+        let shapeSize = min(w, h) * 0.88
+        tokenX = origin.x
+        tokenY = origin.y
+        tokenSize = shapeSize
+        tokenRotation = 0
+        tokenXAngle = 0
+        tokenYAngle = 0
+        
+        // Fade background to white immediately
+        withAnimation(.easeIn(duration: 1.0)) {
+            fadeWhite = 1.0
+        }
+        
+        // Token dwells for 0.75s in outline position, then cartwheels to destination
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+            // Destination: center-top of screen (where token sits in TokenView)
+            let destX = geo.size.width / 2
+            let destY = geo.size.height / 6
+            
+            // Cartwheel to destination
+            withAnimation(.easeInOut(duration: 2.5)) {
+                tokenX = destX
+                tokenY = destY
+                tokenSize = 124
+                tokenRotation = 1080  // 3 full cartwheels
+            }
+        }
+        
+        // Transition to next screen after cartwheel completes
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.3) {
+            onSelect(shape)
+        }
     }
 }
 
-// MARK: - Custom Shapes
+// MARK: - Cross Shape
 
-struct SquareShape: Shape {
+struct CrossShape: Shape {
     func path(in rect: CGRect) -> Path {
-        Path(roundedRect: rect, cornerRadius: rect.width * 0.3)
-    }
-}
-
-struct TriangleUp: Shape {
-    func path(in rect: CGRect) -> Path {
-        let cr = min(rect.width, rect.height) * 0.15
         var path = Path()
+        let w = rect.width
+        let h = rect.height
+        let cx = w / 2
+        let cy = h / 2
         
-        let top = CGPoint(x: rect.midX, y: rect.minY)
-        let right = CGPoint(x: rect.maxX, y: rect.maxY)
-        let left = CGPoint(x: rect.minX, y: rect.maxY)
+        // Horizontal line
+        path.move(to: CGPoint(x: 0, y: cy))
+        path.addLine(to: CGPoint(x: w, y: cy))
         
-        path.move(to: CGPoint(x: (left.x + top.x) / 2, y: (left.y + top.y) / 2))
-        path.addArc(tangent1End: top, tangent2End: right, radius: cr)
-        path.addArc(tangent1End: right, tangent2End: left, radius: cr)
-        path.addArc(tangent1End: left, tangent2End: top, radius: cr)
-        path.closeSubpath()
-        
-        return path
-    }
-}
-
-struct TriangleDown: Shape {
-    func path(in rect: CGRect) -> Path {
-        let cr = min(rect.width, rect.height) * 0.15
-        var path = Path()
-        
-        let bottom = CGPoint(x: rect.midX, y: rect.maxY)
-        let right = CGPoint(x: rect.maxX, y: rect.minY)
-        let left = CGPoint(x: rect.minX, y: rect.minY)
-        
-        path.move(to: CGPoint(x: (left.x + bottom.x) / 2, y: (left.y + bottom.y) / 2))
-        path.addArc(tangent1End: bottom, tangent2End: right, radius: cr)
-        path.addArc(tangent1End: right, tangent2End: left, radius: cr)
-        path.addArc(tangent1End: left, tangent2End: bottom, radius: cr)
-        path.closeSubpath()
+        // Vertical line
+        path.move(to: CGPoint(x: cx, y: 0))
+        path.addLine(to: CGPoint(x: cx, y: h))
         
         return path
     }

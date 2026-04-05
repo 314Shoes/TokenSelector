@@ -1,5 +1,4 @@
 import SwiftUI
-import QuartzCore
 
 struct TokenView: View {
     let shade: ShadeChoice
@@ -15,32 +14,25 @@ struct TokenView: View {
     @State private var isDragging = false
     @State private var isDisappearing = false
     @State private var disappearScale: CGFloat = 1.0
-    @State private var spinSpeed: Double = 0
     @State private var tokenVisible = true
     @State private var screenHeight: CGFloat = 0
+    @State private var sectionsOpacity: Double = 0
     
-    private let coinLayers = 8
-    private let layerDepth: CGFloat = 1.5
-    private let flipDuration: Double = 6.0
-    private let pauseDuration: Double = 0.8
-    
-    private var tokenColor: Color {
-        ColorHelper.resolve(color: colorChoice, shade: shade)
-    }
-    
-    private var colorName: String {
-        let prefix = shade == .black ? "Dark " : ""
-        return prefix + colorChoice.rawValue.capitalized
-    }
+    private let flipDuration: Double = FlipAnimationState.flipDuration
     
     var body: some View {
         GeometryReader { geo in
             ZStack {
+                // White background to prevent flash during transition
+                Color.white
+                    .ignoresSafeArea()
+                
                 VStack(spacing: 0) {
                     topSection
                     middleSection
                     bottomSection
                 }
+                .opacity(sectionsOpacity)
                 
                 // Token overlay - floats above all sections
                 if tokenVisible {
@@ -51,6 +43,10 @@ struct TokenView: View {
             .onAppear {
                 screenHeight = geo.size.height
                 startFlipSequence()
+                // Fade in sections
+                withAnimation(.easeIn(duration: 0.8)) {
+                    sectionsOpacity = 1.0
+                }
             }
         }
         .ignoresSafeArea()
@@ -61,10 +57,14 @@ struct TokenView: View {
     private var topSection: some View {
         ZStack {
             Color.white
-            Text("Your New Token")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.black)
+            VStack {
+                Spacer()
+                Text("Your New Token")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.black)
+                    .padding(.bottom, 40)
+            }
         }
     }
     
@@ -90,32 +90,30 @@ struct TokenView: View {
     
     @ViewBuilder
     private var draggableToken: some View {
-        if tokenVisible {
-            coinTokenView
-                .frame(width: 124, height: 124)
-                .scaleEffect(isDisappearing ? disappearScale : (isDragging ? 1.1 : 1.0))
-                .offset(x: offset.width, y: offset.height)
-                .gesture(
-                    DragGesture(coordinateSpace: .global)
-                        .onChanged { value in
-                            guard !isDisappearing else { return }
-                            isDragging = true
-                            offset = CGSize(
-                                width: value.location.x - value.startLocation.x,
-                                height: value.location.y - value.startLocation.y
-                            )
-                        }
-                        .onEnded { value in
-                            guard !isDisappearing else { return }
-                            isDragging = false
-                            offset = CGSize(
-                                width: value.location.x - value.startLocation.x,
-                                height: value.location.y - value.startLocation.y
-                            )
-                            handleDrop(dropY: value.location.y)
-                        }
-                )
-        }
+        coinTokenView
+            .frame(width: 124, height: 124)
+            .scaleEffect(isDisappearing ? disappearScale : (isDragging ? 1.1 : 1.0))
+            .offset(x: offset.width, y: offset.height)
+            .gesture(
+                DragGesture(coordinateSpace: .global)
+                    .onChanged { value in
+                        guard !isDisappearing else { return }
+                        isDragging = true
+                        offset = CGSize(
+                            width: value.location.x - value.startLocation.x,
+                            height: value.location.y - value.startLocation.y
+                        )
+                    }
+                    .onEnded { value in
+                        guard !isDisappearing else { return }
+                        isDragging = false
+                        offset = CGSize(
+                            width: value.location.x - value.startLocation.x,
+                            height: value.location.y - value.startLocation.y
+                        )
+                        handleDrop(dropY: value.location.y)
+                    }
+            )
     }
     
     private func handleDrop(dropY: CGFloat) {
@@ -131,107 +129,16 @@ struct TokenView: View {
         }
     }
     
-    // MARK: - Derived Colors
-    
-    private var edgeColor: Color {
-        // Much darker version for the ridge/edge
-        switch shade {
-        case .white:
-            switch colorChoice {
-            case .blue:  return Color(red: 0.05, green: 0.08, blue: 0.25)
-            case .green: return Color(red: 0.02, green: 0.15, blue: 0.08)
-            case .red:   return Color(red: 0.25, green: 0.04, blue: 0.04)
-            }
-        case .black:
-            switch colorChoice {
-            case .blue:  return Color(red: 0.03, green: 0.05, blue: 0.18)
-            case .green: return Color(red: 0.02, green: 0.10, blue: 0.05)
-            case .red:   return Color(red: 0.18, green: 0.03, blue: 0.03)
-            }
-        }
-    }
-    
-    // Incenter anchor for equidistant inset on each shape
-    private var impressionAnchor: UnitPoint {
-        switch shapeChoice {
-        case .square, .circle:
-            return .center
-        case .triangleUp:
-            // Incenter of isoceles triangle in square: y ≈ sqrt(5)/(1+sqrt(5)) ≈ 0.691
-            return UnitPoint(x: 0.5, y: 0.691)
-        case .triangleDown:
-            return UnitPoint(x: 0.5, y: 0.309)
-        }
-    }
-    
     // MARK: - 3D Coin
     
     private var coinTokenView: some View {
-        ZStack {
-            // Protruding ridge layers - create visible 3D edge
-            ForEach(0..<coinLayers, id: \.self) { i in
-                tokenShapeView(color: edgeColor.opacity(0.4))
-                    .allowsHitTesting(false)
-                    .modifier(CoinLayerEffect(
-                        xAngle: xAngle,
-                        yAngle: yAngle,
-                        zOffset: -CGFloat(coinLayers - i) * layerDepth
-                    ))
-            }
-            
-            // Back face
-            baseFace
-                .allowsHitTesting(false)
-                .modifier(CoinLayerEffect(
-                    xAngle: xAngle,
-                    yAngle: yAngle,
-                    zOffset: -CGFloat(coinLayers) * layerDepth
-                ))
-            
-            // Front face (no directional lighting baked in)
-            baseFace
-                .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
-                .modifier(CoinLayerEffect(
-                    xAngle: xAngle,
-                    yAngle: yAngle,
-                    zOffset: 0
-                ))
-        }
-    }
-    
-    // MARK: - Simple Flat Token
-    
-    @ViewBuilder
-    private var baseFace: some View {
-        ZStack {
-            // Protruding ridge - much lighter color
-            tokenShapeView(color: edgeColor.opacity(0.4))
-            
-            // Flat center - vibrant token color
-            tokenShapeView(color: tokenColor.opacity(1.0))
-                .scaleEffect(0.75, anchor: impressionAnchor)
-            
-        }
-    }
-    
-    // MARK: - Shape Helpers
-    
-    private func currentShape() -> TokenShape {
-        TokenShape(shapeChoice: shapeChoice)
-    }
-    
-    @ViewBuilder
-    private func tokenShapeView(color: Color) -> some View {
-        switch shapeChoice {
-        case .square:
-            SquareShape().fill(color)
-        case .circle:
-            Circle().fill(color)
-        case .triangleUp:
-            TriangleUp().fill(color)
-        case .triangleDown:
-            TriangleDown().fill(color)
-        }
+        CoinTokenView(
+            shade: shade,
+            colorChoice: colorChoice,
+            shapeChoice: shapeChoice,
+            xAngle: xAngle,
+            yAngle: yAngle
+        )
     }
     
     // MARK: - Animation
@@ -243,61 +150,114 @@ struct TokenView: View {
     private func startFlipSequence() {
         guard !isDisappearing else { return }
         
-        // Phase 1: Horizontal flip (X axis)
-        withAnimation(.easeInOut(duration: flipDuration)) {
+        // Full 360° horizontal flip
+        withAnimation(.linear(duration: flipDuration)) {
             xAngle += 360
         }
         
-        // Phase 2: Vertical flip (Y axis)
-        DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration + pauseDuration) {
+        // After horizontal completes, reset X and do vertical flip
+        DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration) {
             guard !self.isDisappearing else { return }
-            withAnimation(.easeInOut(duration: flipDuration)) {
-                yAngle += 360
+            self.xAngle = 0
+            withAnimation(.linear(duration: self.flipDuration)) {
+                self.yAngle += 360
             }
-        }
-        
-        // Restart cycle
-        let totalCycle = (flipDuration + pauseDuration) * 2
-        DispatchQueue.main.asyncAfter(deadline: .now() + totalCycle) {
-            guard !self.isDisappearing else { return }
-            startFlipSequence()
+            
+            // After vertical completes, reset Y and restart
+            DispatchQueue.main.asyncAfter(deadline: .now() + self.flipDuration) {
+                guard !self.isDisappearing else { return }
+                self.yAngle = 0
+                self.startFlipSequence()
+            }
         }
     }
     
     private func startDisappearAnimation(target: DisappearTarget) {
         isDisappearing = true
         
-        // Switch to vertical-only rapid spin + shrink over 2 seconds
-        withAnimation(.easeIn(duration: 2.0)) {
-            yAngle += 360 * 8
-            disappearScale = 0.01
+        let stages = FlipAnimationState.disappearStages
+        let stageCount = Double(stages.count)
+        
+        // Pre-calculate: axis goes from 90° to 210° (120° sweep)
+        let startAxis: Double = 90
+        let endAxis: Double = 210
+        
+        var delay: Double = 0
+        var cumulativeFlip: Double = 0
+        var currentSpeed: Double = 180  // Starting flip degrees per stage
+        
+        for (i, stage) in stages.enumerated() {
+            let d = delay
+            // Pre-compute the axis angle at the END of this stage
+            let progress = Double(i + 1) / stageCount
+            let axisAngle = startAxis + (endAxis - startAxis) * progress
+            let axisRad = axisAngle * .pi / 180
+            cumulativeFlip += currentSpeed
+            
+            // Pre-compute target x/y from axis + cumulative flip
+            let targetX = cumulativeFlip * cos(axisRad)
+            let targetY = cumulativeFlip * sin(axisRad)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + d) {
+                withAnimation(.linear(duration: stage.duration)) {
+                    self.xAngle = targetX
+                    self.yAngle = targetY
+                    self.disappearScale = stage.scale
+                }
+            }
+            currentSpeed = min(currentSpeed * 1.4, 480)
+            delay += stage.duration
         }
         
-        // After 2 seconds, hide token and navigate
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            tokenVisible = false
+        // After all stages complete, hide and navigate
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.05) {
+            self.tokenVisible = false
             switch target {
             case .restart:
-                onRestart()
+                self.onRestart()
             case .useToken:
-                onUseToken()
+                self.onUseToken()
             }
         }
     }
 }
 
-// MARK: - Token Shape (iOS 14+ compatible shape wrapper)
+// MARK: - 3D Face Visibility Modifier
 
-struct TokenShape: Shape {
-    let shapeChoice: ShapeChoice
+struct CoinFaceEffect: AnimatableModifier {
+    var xAngle: Double
+    var yAngle: Double
+    var zOffset: CGFloat
+    var isFront: Bool
+    var isEdge: Bool
+    var perspective: CGFloat = 1800
     
-    func path(in rect: CGRect) -> Path {
-        switch shapeChoice {
-        case .square: return SquareShape().path(in: rect)
-        case .circle: return Circle().path(in: rect)
-        case .triangleUp: return TriangleUp().path(in: rect)
-        case .triangleDown: return TriangleDown().path(in: rect)
+    var animatableData: AnimatablePair<Double, Double> {
+        get { AnimatablePair(xAngle, yAngle) }
+        set {
+            xAngle = newValue.first
+            yAngle = newValue.second
         }
+    }
+    
+    private func faceOpacity() -> Double {
+        guard !isEdge else { return 1 }
+        let xRad = xAngle * .pi / 180
+        let yRad = yAngle * .pi / 180
+        let facing = cos(xRad) * cos(yRad)
+        let raw = isFront ? facing : -facing
+        return max(0, min(1, (raw + 0.1) / 0.2))
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .modifier(CoinLayerEffect(
+                xAngle: xAngle,
+                yAngle: yAngle,
+                zOffset: zOffset,
+                perspective: perspective
+            ))
+            .opacity(faceOpacity())
     }
 }
 

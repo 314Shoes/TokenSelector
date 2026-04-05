@@ -1,5 +1,4 @@
 import SwiftUI
-import QuartzCore
 
 struct UseTokenView: View {
     let shade: ShadeChoice
@@ -14,49 +13,16 @@ struct UseTokenView: View {
     @State private var isDragging = false
     @State private var tokenScale: CGFloat = 0.01
     @State private var tokenVisible = false
-    @State private var appearPhase = 0
+    @State private var isDisappearing = false
     
-    private let coinLayers = 8
-    private let layerDepth: CGFloat = 1.5
-    private let flipDuration: Double = 6.0
-    private let pauseDuration: Double = 0.8
-    
-    private var tokenColor: Color {
-        ColorHelper.resolve(color: colorChoice, shade: shade)
-    }
-    
-    private var edgeColor: Color {
-        switch shade {
-        case .white:
-            switch colorChoice {
-            case .blue:  return Color(red: 0.05, green: 0.08, blue: 0.25)
-            case .green: return Color(red: 0.02, green: 0.15, blue: 0.08)
-            case .red:   return Color(red: 0.25, green: 0.04, blue: 0.04)
-            }
-        case .black:
-            switch colorChoice {
-            case .blue:  return Color(red: 0.03, green: 0.05, blue: 0.18)
-            case .green: return Color(red: 0.02, green: 0.10, blue: 0.05)
-            case .red:   return Color(red: 0.18, green: 0.03, blue: 0.03)
-            }
-        }
-    }
-    
-    private var impressionAnchor: UnitPoint {
-        switch shapeChoice {
-        case .square, .circle:
-            return .center
-        case .triangleUp:
-            return UnitPoint(x: 0.5, y: 0.691)
-        case .triangleDown:
-            return UnitPoint(x: 0.5, y: 0.309)
-        }
-    }
+    private let flipDuration: Double = FlipAnimationState.flipDuration
     
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width / 2
             let h = geo.size.height / 2
+            
+            let centerSize: CGFloat = 170
             
             ZStack {
                 // 4 quadrants
@@ -106,6 +72,12 @@ struct UseTokenView: View {
                     }
                 }
                 
+                // White center space for the token
+                RoundedRectangle(cornerRadius: 28)
+                    .fill(Color.white)
+                    .frame(width: centerSize, height: centerSize)
+                    .shadow(color: .black.opacity(0.2), radius: 10, y: 3)
+                
                 // Draggable token in center
                 if tokenVisible {
                     coinTokenView
@@ -124,7 +96,7 @@ struct UseTokenView: View {
                                 .onEnded { value in
                                     isDragging = false
                                     offset = value.translation
-                                    handleUseTokenDrop(value.translation)
+                                    handleUseTokenDrop(value.translation, geo: geo)
                                 }
                         )
                 }
@@ -139,128 +111,176 @@ struct UseTokenView: View {
     // MARK: - 3D Coin
     
     private var coinTokenView: some View {
-        ZStack {
-            ForEach(0..<coinLayers, id: \.self) { i in
-                tokenShapeView(color: edgeColor.opacity(0.4))
-                    .allowsHitTesting(false)
-                    .modifier(CoinLayerEffect(
-                        xAngle: xAngle,
-                        yAngle: yAngle,
-                        zOffset: -CGFloat(coinLayers - i) * layerDepth
-                    ))
-            }
-            
-            baseFace
-                .allowsHitTesting(false)
-                .modifier(CoinLayerEffect(
-                    xAngle: xAngle,
-                    yAngle: yAngle,
-                    zOffset: -CGFloat(coinLayers) * layerDepth
-                ))
-            
-            baseFace
-                .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
-                .modifier(CoinLayerEffect(
-                    xAngle: xAngle,
-                    yAngle: yAngle,
-                    zOffset: 0
-                ))
-        }
-    }
-    
-    @ViewBuilder
-    private var baseFace: some View {
-        ZStack {
-            tokenShapeView(color: edgeColor.opacity(0.4))
-            tokenShapeView(color: tokenColor.opacity(1.0))
-                .scaleEffect(0.75, anchor: impressionAnchor)
-        }
-    }
-    
-    @ViewBuilder
-    private func tokenShapeView(color: Color) -> some View {
-        switch shapeChoice {
-        case .square:
-            SquareShape().fill(color)
-        case .circle:
-            Circle().fill(color)
-        case .triangleUp:
-            TriangleUp().fill(color)
-        case .triangleDown:
-            TriangleDown().fill(color)
-        }
+        CoinTokenView(
+            shade: shade,
+            colorChoice: colorChoice,
+            shapeChoice: shapeChoice,
+            xAngle: xAngle,
+            yAngle: yAngle
+        )
     }
     
     // MARK: - Drop Detection
     
-    private func handleUseTokenDrop(_ translation: CGSize) {
-        // Determine which quadrant based on token position relative to center
-        if translation.width > 100 && translation.height < -100 {
-            // Top-right quadrant (Green - Sync with Others)
-            // Add future functionality here
-        } else if translation.width < -100 && translation.height > 100 {
-            // Bottom-left quadrant (Red - Discover Patterns)
-            // Add future functionality here
-        } else if translation.width > 100 && translation.height > 100 {
+    private func handleUseTokenDrop(_ translation: CGSize, geo: GeometryProxy) {
+        // Token center position relative to screen center
+        let tokenCenterX = geo.size.width / 2 + translation.width
+        let tokenCenterY = geo.size.height / 2 + translation.height
+        let tokenRadius: CGFloat = 62 * tokenScale  // half of 124pt token
+        
+        // Token bounding box
+        let tokenLeft = tokenCenterX - tokenRadius
+        let tokenRight = tokenCenterX + tokenRadius
+        let tokenTop = tokenCenterY - tokenRadius
+        let tokenBottom = tokenCenterY + tokenRadius
+        
+        let midX = geo.size.width / 2
+        let midY = geo.size.height / 2
+        
+        // Check which quadrants the token overlaps (any part touching counts)
+        let touchesTopLeft = tokenLeft < midX && tokenTop < midY
+        let touchesTopRight = tokenRight > midX && tokenTop < midY
+        let touchesBottomLeft = tokenLeft < midX && tokenBottom > midY
+        let touchesBottomRight = tokenRight > midX && tokenBottom > midY
+        
+        // Pick the quadrant where the token center is closest to
+        // but only if the token is actually touching that quadrant
+        if touchesBottomRight && (tokenCenterX > midX || tokenCenterY > midY) {
             // Bottom-right quadrant (White - Deposit to Treasure Chest)
             startDisappearAnimationAndRestart()
-        } else {
-            // Top-left quadrant (Blue - Apply to Self) or center
-            // Add future functionality here
+        } else if touchesTopLeft && tokenCenterX <= midX && tokenCenterY <= midY {
+            // Top-left quadrant (Blue - Apply to Self)
+            // Future functionality
+        } else if touchesTopRight && tokenCenterX > midX && tokenCenterY <= midY {
+            // Top-right quadrant (Green - Sync with Others)
+            // Future functionality
+        } else if touchesBottomLeft && tokenCenterX <= midX && tokenCenterY > midY {
+            // Bottom-left quadrant (Red - Discover Patterns)
+            // Future functionality
+        } else if touchesBottomRight {
+            startDisappearAnimationAndRestart()
+        } else if touchesTopLeft {
+            // Future functionality
+        } else if touchesTopRight {
+            // Future functionality
+        } else if touchesBottomLeft {
+            // Future functionality
         }
+        // If no quadrant touched (token still in center), do nothing
     }
     
     private func startDisappearAnimationAndRestart() {
-        // Disappear animation (same as before)
-        withAnimation(.easeIn(duration: 2.0)) {
-            yAngle += 360 * 8
-            tokenScale = 0.01
+        isDisappearing = true
+        
+        let stages = FlipAnimationState.disappearStages
+        let stageCount = Double(stages.count)
+        
+        // Pre-calculate: axis goes from 90° to 210° (120° sweep)
+        let startAxis: Double = 90
+        let endAxis: Double = 210
+        
+        var delay: Double = 0
+        var cumulativeFlip: Double = 0
+        var currentSpeed: Double = 180
+        
+        for (i, stage) in stages.enumerated() {
+            let d = delay
+            let progress = Double(i + 1) / stageCount
+            let axisAngle = startAxis + (endAxis - startAxis) * progress
+            let axisRad = axisAngle * .pi / 180
+            cumulativeFlip += currentSpeed
+            
+            let targetX = cumulativeFlip * cos(axisRad)
+            let targetY = cumulativeFlip * sin(axisRad)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + d) {
+                withAnimation(.linear(duration: stage.duration)) {
+                    self.xAngle = targetX
+                    self.yAngle = targetY
+                    self.tokenScale = stage.scale
+                }
+            }
+            currentSpeed = min(currentSpeed * 1.4, 480)
+            delay += stage.duration
         }
         
-        // Navigate to beginning after 2 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            onDeposit()
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.05) {
+            self.onDeposit()
         }
     }
     
-    // MARK: - Appear Animation (reverse of disappear)
+    // MARK: - Appear Animation (reverse of disappear: fast+small → slow+big)
     
     private func startAppearAnimation() {
-        // Delay 1 second before token appears
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             tokenVisible = true
             tokenScale = 0.01
             
-            // Phase 1: Rapid vertical spin + grow over 2 seconds
-            withAnimation(.easeOut(duration: 2.0)) {
-                yAngle += 360 * 8
-                tokenScale = 1.0
+            // Start from where disappear would end
+            let startFlip: Double = 1745  // Cumulative from disappear
+            let startAxis: Double = 210
+            let endAxis: Double = 90
+            
+            let stages = FlipAnimationState.appearStages
+            let stageCount = Double(stages.count)
+            
+            // Calculate exact flip reduction per stage to reach 0 at end
+            let flipReductionPerStage = startFlip / stageCount
+            
+            var delay: Double = 0
+            var currentFlip: Double = startFlip
+            
+            for (i, stage) in stages.enumerated() {
+                let d = delay
+                let progress = Double(i + 1) / stageCount
+                let axisAngle = startAxis + (endAxis - startAxis) * progress
+                let axisRad = axisAngle * .pi / 180
+                
+                // Reduce flip amount each stage (will reach 0 at final stage)
+                currentFlip = max(currentFlip - flipReductionPerStage, 0)
+                
+                let targetX = currentFlip * cos(axisRad)
+                let targetY = currentFlip * sin(axisRad)
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + d) {
+                    withAnimation(.linear(duration: stage.duration)) {
+                        self.xAngle = targetX
+                        self.yAngle = targetY
+                        self.tokenScale = stage.scale
+                    }
+                }
+                delay += stage.duration
             }
             
-            // Phase 2: Start normal flip sequence after appear completes
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                startFlipSequence()
+            // Start alternating axis flip (already at 0,0 so no reset needed)
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.1) {
+                self.startFlipSequence()
             }
         }
     }
     
     private func startFlipSequence() {
-        // Phase 1: Horizontal flip (X axis)
-        withAnimation(.easeInOut(duration: flipDuration)) {
+        guard !isDisappearing else { return }
+        
+        // Full 360° horizontal flip
+        withAnimation(.linear(duration: flipDuration)) {
             xAngle += 360
         }
         
-        // Phase 2: Vertical flip (Y axis)
-        DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration + pauseDuration) {
-            withAnimation(.easeInOut(duration: flipDuration)) {
-                yAngle += 360
+        // After horizontal completes, reset X and do vertical flip
+        DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration) {
+            guard !self.isDisappearing else { return }
+            self.xAngle = 0
+            withAnimation(.linear(duration: self.flipDuration)) {
+                self.yAngle += 360
             }
-        }
-        
-        // Restart cycle
-        let totalCycle = (flipDuration + pauseDuration) * 2
-        DispatchQueue.main.asyncAfter(deadline: .now() + totalCycle) {
-            startFlipSequence()
+            
+            // After vertical completes, reset Y and restart
+            DispatchQueue.main.asyncAfter(deadline: .now() + self.flipDuration) {
+                guard !self.isDisappearing else { return }
+                self.yAngle = 0
+                self.startFlipSequence()
+            }
         }
     }
 }

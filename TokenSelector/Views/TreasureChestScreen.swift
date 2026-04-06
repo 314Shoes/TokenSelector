@@ -27,60 +27,6 @@ struct TreasureChestScreen: View {
                     .foregroundColor(.white)
                     .padding(.top, 20)
                 
-                // Chest illustration
-                ZStack {
-                    // Chest body
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.65, green: 0.45, blue: 0.25),
-                                    Color(red: 0.45, green: 0.3, blue: 0.18)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 120, height: 80)
-                        .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
-                    
-                    // Chest lid
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.6, green: 0.4, blue: 0.2),
-                                    Color(red: 0.4, green: 0.25, blue: 0.15)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 120, height: 25)
-                        .offset(y: -40)
-                    
-                    // Gold coins spilling out
-                    VStack(spacing: -5) {
-                        ForEach(0..<3, id: \.self) { index in
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.yellow,
-                                            Color.orange
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
-                                .frame(width: 15 - CGFloat(index * 2), height: 15 - CGFloat(index * 2))
-                                .offset(x: CGFloat(index * 8 - 8), y: CGFloat(index * 3))
-                        }
-                    }
-                    .offset(y: -20)
-                }
-                .padding(.vertical, 10)
-                
                 // Token count
                 Text("\(depositedTokens.count) Tokens")
                     .font(.title2)
@@ -88,27 +34,34 @@ struct TreasureChestScreen: View {
                 
                 // Deposited tokens grid
                 ScrollView {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 15) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 20) {
                         ForEach(depositedTokens, id: \.id) { token in
-                            VStack(spacing: 4) {
+                            VStack(spacing: 6) {
                                 // Token shape
                                 tokenShapeView(
                                     shape: token.shape,
                                     color: ColorHelper.resolve(color: token.color, shade: token.shade)
                                 )
-                                .frame(width: 40, height: 40)
+                                .frame(width: 50, height: 50)
                                 .shadow(color: .black.opacity(0.3), radius: 2)
                                 
                                 // Token ID
                                 Text(String(token.id.suffix(4)))
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white.opacity(0.8))
+                                
+                                // Date/Time stamp
+                                Text(formatDate(token.depositedAt))
                                     .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.6))
+                                    .foregroundColor(.white.opacity(0.5))
                             }
+                            .frame(maxWidth: .infinity)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
                 }
-                .frame(maxHeight: 300)
+                .frame(maxHeight: 350)
                 
                 Spacer()
                 
@@ -148,7 +101,14 @@ struct TreasureChestScreen: View {
     }
     
     private func loadDepositedTokens() {
-        depositedTokens = TokenStorage.load()
+        depositedTokens = TokenStorage.load().sorted { $0.depositedAt > $1.depositedAt }
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 

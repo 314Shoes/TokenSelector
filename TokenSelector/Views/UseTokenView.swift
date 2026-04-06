@@ -6,6 +6,7 @@ struct UseTokenView: View {
     let shapeChoice: ShapeChoice
     let tokenID: String
     let onDeposit: () -> Void
+    let onCalendar: () -> Void
     
     @State private var xAngle: Double = 0
     @State private var yAngle: Double = 0
@@ -156,7 +157,7 @@ struct UseTokenView: View {
             // Future functionality
         } else if touchesBottomLeft && tokenCenterX <= midX && tokenCenterY > midY {
             // Bottom-left quadrant (Red - Discover Patterns)
-            // Future functionality
+            startDisappearAnimationAndNavigateToCalendar()
         } else if touchesBottomRight {
             startDisappearAnimationAndRestart()
         } else if touchesTopLeft {
@@ -164,7 +165,7 @@ struct UseTokenView: View {
         } else if touchesTopRight {
             // Future functionality
         } else if touchesBottomLeft {
-            // Future functionality
+            startDisappearAnimationAndNavigateToCalendar()
         }
         // If no quadrant touched (token still in center), do nothing
     }
@@ -206,6 +207,46 @@ struct UseTokenView: View {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.05) {
             self.onDeposit()
+        }
+    }
+    
+    private func startDisappearAnimationAndNavigateToCalendar() {
+        isDisappearing = true
+        
+        let stages = FlipAnimationState.disappearStages
+        let stageCount = Double(stages.count)
+        
+        // Pre-calculate: axis goes from 90° to 210° (120° sweep)
+        let startAxis: Double = 90
+        let endAxis: Double = 210
+        
+        var delay: Double = 0
+        var cumulativeFlip: Double = 0
+        var currentSpeed: Double = 180
+        
+        for (i, stage) in stages.enumerated() {
+            let d = delay
+            let progress = Double(i + 1) / stageCount
+            let axisAngle = startAxis + (endAxis - startAxis) * progress
+            let axisRad = axisAngle * .pi / 180
+            cumulativeFlip += currentSpeed
+            
+            let targetX = cumulativeFlip * cos(axisRad)
+            let targetY = cumulativeFlip * sin(axisRad)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + d) {
+                withAnimation(.linear(duration: stage.duration)) {
+                    self.xAngle = targetX
+                    self.yAngle = targetY
+                    self.tokenScale = stage.scale
+                }
+            }
+            currentSpeed = min(currentSpeed * 1.4, 480)
+            delay += stage.duration
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.05) {
+            self.onCalendar()
         }
     }
     
@@ -292,7 +333,8 @@ struct UseTokenView_Previews: PreviewProvider {
             colorChoice: .blue,
             shapeChoice: .circle,
             tokenID: "TOKEN-A3F2B1C9",
-            onDeposit: { print("Deposit - restart") }
+            onDeposit: { print("Deposit - restart") },
+            onCalendar: { print("Calendar") }
         )
     }
 }

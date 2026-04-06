@@ -616,23 +616,23 @@ struct TreasureChestView: View {
             }
         }
 
-        // Phase 6 — Token fades out (starts at 7.7 s) - 2 SECOND DURATION
-        DispatchQueue.main.asyncAfter(deadline: .now() + 7.7) {
-            withAnimation(.easeIn(duration: 2.0)) {
+        // Phase 6 — Token fades out (starts at 5.0 s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            withAnimation(.easeIn(duration: 1.0)) {
                 tokenOpacity = 0
                 tokenScale = 0.3
             }
         }
 
-        // Phase 7 — Lid closes with snap (starts at 9.7 s) - DOUBLE DURATION
-        DispatchQueue.main.asyncAfter(deadline: .now() + 9.7) {
+        // Phase 7 — Lid closes with snap (starts at 6.0 s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6.0) {
             withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 2.0)) {
                 lidOpen = 0
             }
         }
 
-        // Phase 8 — Auto-navigate (starts at 11.7 s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 11.7) {
+        // Phase 8 — Auto-navigate (starts at 8.0 s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) {
             onComplete()
         }
     }

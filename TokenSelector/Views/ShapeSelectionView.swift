@@ -16,8 +16,6 @@ struct ShapeSelectionView: View {
     @State private var tokenY: CGFloat = 0
     @State private var tokenSize: CGFloat = 0
     @State private var tokenRotation: Double = 0
-    @State private var tokenXAngle: Double = 0
-    @State private var tokenYAngle: Double = 0
     @State private var fadeWhite: Double = 0
     
     private var bgColor: Color {
@@ -45,10 +43,10 @@ struct ShapeSelectionView: View {
                                         .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
                                         .opacity(shapesOpacity)
                                 )
+                                .contentShape(SquareShape())
+                                .onTapGesture { selectShape(.square, geo: geo) }
                         }
                         .frame(width: w, height: h)
-                        .contentShape(SquareShape())
-                        .onTapGesture { selectShape(.square, geo: geo) }
                         
                         // Upper-right: Circle
                         ZStack {
@@ -63,10 +61,10 @@ struct ShapeSelectionView: View {
                                         .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
                                         .opacity(shapesOpacity)
                                 )
+                                .contentShape(Circle())
+                                .onTapGesture { selectShape(.circle, geo: geo) }
                         }
                         .frame(width: w, height: h)
-                        .contentShape(Circle())
-                        .onTapGesture { selectShape(.circle, geo: geo) }
                     }
                     
                     HStack(spacing: 0) {
@@ -83,10 +81,10 @@ struct ShapeSelectionView: View {
                                         .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
                                         .opacity(shapesOpacity)
                                 )
+                                .contentShape(TriangleUp())
+                                .onTapGesture { selectShape(.triangleUp, geo: geo) }
                         }
                         .frame(width: w, height: h)
-                        .contentShape(TriangleUp())
-                        .onTapGesture { selectShape(.triangleUp, geo: geo) }
                         
                         // Lower-right: Triangle Down
                         ZStack {
@@ -101,10 +99,10 @@ struct ShapeSelectionView: View {
                                         .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
                                         .opacity(shapesOpacity)
                                 )
+                                .contentShape(TriangleDown())
+                                .onTapGesture { selectShape(.triangleDown, geo: geo) }
                         }
                         .frame(width: w, height: h)
-                        .contentShape(TriangleDown())
-                        .onTapGesture { selectShape(.triangleDown, geo: geo) }
                     }
                 }
                 
@@ -133,8 +131,8 @@ struct ShapeSelectionView: View {
                         shade: shade,
                         colorChoice: colorChoice,
                         shapeChoice: shape,
-                        xAngle: tokenXAngle,
-                        yAngle: tokenYAngle
+                        xAngle: 0,
+                        yAngle: 0
                     )
                         .frame(width: tokenSize, height: tokenSize)
                         .rotationEffect(.degrees(tokenRotation))
@@ -188,8 +186,6 @@ struct ShapeSelectionView: View {
         tokenY = origin.y
         tokenSize = shapeSize
         tokenRotation = 0
-        tokenXAngle = 0
-        tokenYAngle = 0
         
         // Fade background to white immediately
         withAnimation(.easeIn(duration: 1.0)) {

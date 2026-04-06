@@ -7,8 +7,10 @@ enum AppScreen {
     case shapeSelection
     case token
     case useToken
-    case treasureChest
+    case calendar
+    case colorChannel
     case treasureChestAnimation
+    case treasureChest
 }
 
 enum ShadeChoice: String, Codable {
@@ -119,6 +121,41 @@ struct ContentView: View {
                         withAnimation(.easeInOut(duration: 0.5)) {
                             currentScreen = .treasureChestAnimation
                         }
+                    },
+                    onCalendar: {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            currentScreen = .calendar
+                        }
+                    }
+                )
+                .transition(.opacity)
+                
+            case .calendar:
+                CalendarView(
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            currentScreen = .useToken
+                        }
+                    },
+                    onTreasureChest: {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            currentScreen = .treasureChestAnimation
+                        }
+                    },
+                    onColorChannel: {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            currentScreen = .colorChannel
+                        }
+                    }
+                )
+                .transition(.opacity)
+                
+            case .colorChannel:
+                ColorChannelView(
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            currentScreen = .calendar
+                        }
                     }
                 )
                 .transition(.opacity)
@@ -203,6 +240,19 @@ struct IntroScreenView: View {
         (188, 678, 0.7, 0.92, 1), (244, 712, 0.6, 0.88, 2), (299, 689, 0.8, 1.0, 3),
         (355, 756, 0.5, 0.88, 1), (6, 789, 0.7, 0.92, 2), (61, 723, 0.6, 0.88, 3),
         (117, 767, 0.8, 0.95, 1), (172, 734, 0.5, 0.85, 2), (228, 801, 0.7, 0.92, 3),
+        // ── More extra tiny stars ──
+        (51, 19, 0.4, 0.7, 1), (134, 33, 0.5, 0.75, 2), (217, 15, 0.4, 0.7, 3),
+        (312, 27, 0.5, 0.75, 1), (376, 51, 0.4, 0.7, 2), (39, 78, 0.5, 0.75, 3),
+        (112, 93, 0.4, 0.7, 1), (198, 119, 0.5, 0.75, 2), (287, 84, 0.4, 0.7, 3),
+        (358, 137, 0.5, 0.75, 1), (73, 163, 0.4, 0.7, 2), (156, 189, 0.5, 0.75, 3),
+        (241, 172, 0.4, 0.7, 1), (329, 208, 0.5, 0.75, 2), (382, 234, 0.4, 0.7, 3),
+        (48, 267, 0.5, 0.75, 1), (129, 293, 0.4, 0.7, 2), (213, 318, 0.5, 0.75, 3),
+        (298, 287, 0.4, 0.7, 1), (371, 342, 0.5, 0.75, 2), (84, 378, 0.4, 0.7, 3),
+        (167, 413, 0.5, 0.75, 1), (252, 439, 0.4, 0.7, 2), (346, 464, 0.5, 0.75, 3),
+        (389, 498, 0.4, 0.7, 1), (61, 534, 0.5, 0.75, 2), (148, 559, 0.4, 0.7, 3),
+        (234, 584, 0.5, 0.75, 1), (319, 609, 0.4, 0.7, 2), (376, 635, 0.5, 0.75, 3),
+        (92, 671, 0.4, 0.7, 1), (178, 696, 0.5, 0.75, 2), (267, 722, 0.4, 0.7, 3),
+        (351, 747, 0.5, 0.75, 1), (27, 773, 0.4, 0.7, 2), (119, 798, 0.5, 0.75, 3),
         // ── Bright feature stars (random positions) ──
         (23, 41, 5, 1.0, 1), (371, 19, 4.5, 1.0, 2), (189, 97, 6, 1.0, 3),
         (94, 203, 5.5, 1.0, 1), (337, 167, 4, 1.0, 2), (261, 311, 5, 1.0, 3),
@@ -307,24 +357,6 @@ struct IntroScreenView: View {
                         )
                         .blendMode(.screen)
                         .ignoresSafeArea()
-                    )
-                    .overlay(
-                        Rectangle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.0),
-                                        Color.white.opacity(0.03),
-                                        Color.white.opacity(0.06),
-                                        Color.white.opacity(0.03),
-                                        Color.white.opacity(0.0)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 20
-                            )
-                            .ignoresSafeArea()
                     )
                 
                 if showStars {

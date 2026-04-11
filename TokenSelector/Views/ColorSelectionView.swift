@@ -3,12 +3,13 @@ import SwiftUI
 struct ColorSelectionView: View {
     let shade: ShadeChoice
     let direction: ShadeAnimationDirection
-    let onSelect: (ColorChoice) -> Void
-    
+    let onSelect: (ColorChoice, Bool) -> Void
+
     @State private var wipeOffset: CGFloat = 0
     @State private var hasAppeared = false
     @State private var selectedColor: ColorChoice? = nil
     @State private var wipeScale: CGFloat = 0.0
+    @State private var appearDate: Date = Date()
     
     private var shadeColor: Color {
         shade == .black ? Color.black : Color.white
@@ -73,6 +74,7 @@ struct ColorSelectionView: View {
             .onAppear {
                 guard !hasAppeared else { return }
                 hasAppeared = true
+                appearDate = Date()
                 // Dark variants: wipe in from left, Light variants: wipe in from right
                 wipeOffset = shade == .black ? -geo.size.width : geo.size.width
                 withAnimation(.easeOut(duration: 2.0)) {
@@ -121,16 +123,17 @@ struct ColorSelectionView: View {
     
     private func selectColor(_ color: ColorChoice) {
         guard selectedColor == nil else { return }
+        let paused = Date().timeIntervalSince(appearDate) >= 3.0
         selectedColor = color
-        
-        // Directional wipe fills screen over 3 seconds
-        withAnimation(.easeInOut(duration: 3.0)) {
-            wipeScale = 1.0  // Full height coverage for all colors
+
+        // Wipe starts immediately, same pace as shade selection wipe (3.5s linear)
+        withAnimation(.linear(duration: 3.5)) {
+            wipeScale = 1.0
         }
-        
+
         // Transition after wipe completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            onSelect(color)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+            onSelect(color, paused)
         }
     }
     
@@ -141,8 +144,8 @@ struct ColorSelectionView: View {
 
 struct ColorSelectionView_Previews: PreviewProvider {
     static var previews: some View {
-        ColorSelectionView(shade: .black, direction: .whiteToBlack) { color in
-            print("Selected: \(color)")
+        ColorSelectionView(shade: .black, direction: .whiteToBlack) { color, paused in
+            print("Selected: \(color), paused: \(paused)")
         }
     }
 }

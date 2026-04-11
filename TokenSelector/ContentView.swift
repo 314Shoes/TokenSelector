@@ -46,6 +46,15 @@ struct ContentView: View {
     @State private var selectedShape: ShapeChoice = .square
     @State private var tokenID: String = ""
     @State private var introAnimationDirection: ShadeAnimationDirection = .whiteToBlack
+    @State private var showALabel: Bool = false
+    @State private var shadePaused: Bool = false
+    @State private var colorPaused: Bool = false
+    @State private var shapePaused: Bool = false
+    @State private var showMLabel: Bool = false
+
+    private var showILabel: Bool {
+        shadePaused && colorPaused && shapePaused
+    }
     
     var body: some View {
         ZStack {
@@ -55,32 +64,38 @@ struct ContentView: View {
             
             switch currentScreen {
             case .intro:
-                IntroScreenView { direction in
+                IntroScreenView { direction, waited6Pulses in
                     introAnimationDirection = direction
+                    if waited6Pulses { showALabel = true }
                     currentScreen = .shadeSelection
                 }
                 
             case .shadeSelection:
                 ShadeSelectionView(
-                    onSelect: { shade in
+                    onSelect: { shade, paused in
                         selectedShade = shade
+                        shadePaused = paused
                         currentScreen = .colorSelection
                     },
                     direction: introAnimationDirection
                 )
                 
             case .colorSelection:
-                ColorSelectionView(shade: selectedShade, direction: introAnimationDirection) { color in
+                ColorSelectionView(shade: selectedShade, direction: introAnimationDirection) { color, paused in
                     selectedColor = color
+                    colorPaused = paused
                     currentScreen = .shapeSelection
                 }
                 
             case .shapeSelection:
                 ShapeSelectionView(
                     shade: selectedShade,
-                    colorChoice: selectedColor
-                ) { shape in
+                    colorChoice: selectedColor,
+                    showILabel: showILabel
+                ) { shape, paused, showM in
                     selectedShape = shape
+                    shapePaused = paused
+                    if showM { showMLabel = true }
                     tokenID = generateTokenID()
                     currentScreen = .token
                 }
@@ -91,7 +106,15 @@ struct ContentView: View {
                     colorChoice: selectedColor,
                     shapeChoice: selectedShape,
                     tokenID: tokenID,
+                    showALabel: showALabel,
+                    showILabel: showILabel,
+                    showMLabel: showMLabel,
                     onRestart: {
+                        showALabel = false
+                        shadePaused = false
+                        colorPaused = false
+                        shapePaused = false
+                        showMLabel = false
                         withAnimation(.easeInOut(duration: 0.5)) {
                             currentScreen = .intro
                         }
@@ -103,20 +126,26 @@ struct ContentView: View {
                     }
                 )
                 .transition(.opacity)
-                
+
             case .useToken:
                 UseTokenView(
                     shade: selectedShade,
                     colorChoice: selectedColor,
                     shapeChoice: selectedShape,
                     tokenID: tokenID,
+                    showALabel: showALabel,
+                    showILabel: showILabel,
+                    showMLabel: showMLabel,
                     onDeposit: {
                         TokenStorage.deposit(DepositedToken(
                             id: tokenID,
                             shade: selectedShade,
                             color: selectedColor,
                             shape: selectedShape,
-                            depositedAt: Date()
+                            depositedAt: Date(),
+                            showALabel: showALabel,
+                            showILabel: showILabel,
+                            showMLabel: showMLabel
                         ))
                         withAnimation(.easeInOut(duration: 0.5)) {
                             currentScreen = .treasureChestAnimation
@@ -166,6 +195,9 @@ struct ContentView: View {
                     colorChoice: selectedColor,
                     shapeChoice: selectedShape,
                     tokenID: tokenID,
+                    showALabel: showALabel,
+                    showILabel: showILabel,
+                    showMLabel: showMLabel,
                     onComplete: {
                         withAnimation(.easeInOut(duration: 0.5)) {
                             currentScreen = .treasureChest
@@ -182,6 +214,11 @@ struct ContentView: View {
                         }
                     },
                     onRestart: {
+                        showALabel = false
+                        shadePaused = false
+                        colorPaused = false
+                        shapePaused = false
+                        showMLabel = false
                         withAnimation(.easeInOut(duration: 0.5)) {
                             currentScreen = .intro
                         }
@@ -203,14 +240,15 @@ struct ContentView: View {
 // MARK: - Intro Screen View
 
 struct IntroScreenView: View {
-    let onComplete: (ShadeAnimationDirection) -> Void
-    
+    let onComplete: (ShadeAnimationDirection, Bool) -> Void  // (direction, waited6Pulses)
+
     @State private var showStars = false
     @State private var showCenterStar = false
     @State private var centerStarScale: CGFloat = 0.001
     @State private var starOpacity: Double = 0.0
     @State private var pulseScale: CGFloat = 1.0
     @State private var screenTapped = false
+    @State private var pulseStartDate: Date? = nil
     // Three consolidation waves — stars move at different times
     @State private var wave1 = false
     @State private var wave2 = false
@@ -426,28 +464,33 @@ struct IntroScreenView: View {
     private func handleTap(onStar: Bool) {
         guard !screenTapped else { return }
         screenTapped = true
-        
+
         let direction: ShadeAnimationDirection = onStar ? .whiteToBlack : .blackToWhite
-        
+
+        // Check if 6 full pulse cycles completed (6 * 4.4s = 26.4s after pulse start)
+        let waited6Pulses: Bool
+        if let pulseStart = pulseStartDate {
+            waited6Pulses = Date().timeIntervalSince(pulseStart) >= 26.4
+        } else {
+            waited6Pulses = false
+        }
+
         if onStar {
-            // Center star tapped: expand star to fill screen (current behavior)
             withAnimation(.easeIn(duration: 2.5)) {
                 centerStarScale = 30
                 starOpacity = 0
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
-                self.onComplete(direction)
+                self.onComplete(direction, waited6Pulses)
             }
         } else {
-            // Tapped elsewhere: don't expand star, trigger black circle wipe from outside-in
             showBlackCircleWipe = true
-            // Animate black circle closing in from edges toward center
-            // Start with black at edges (clear in center), end with full black
             withAnimation(.easeInOut(duration: 2.5)) {
-                blackCircleRadius = 0 // Shrinking the clear center to 0
+                blackCircleRadius = 0
+                centerStarScale = 0.001
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                self.onComplete(direction)
+                self.onComplete(direction, waited6Pulses)
             }
         }
     }
@@ -482,6 +525,7 @@ struct IntroScreenView: View {
         
         // Start pulse cycle sooner (will affect center star once it appears)
         DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+            self.pulseStartDate = Date()
             self.startPulseCycle()
         }
         

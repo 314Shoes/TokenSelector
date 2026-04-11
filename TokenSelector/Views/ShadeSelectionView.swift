@@ -1,13 +1,14 @@
 import SwiftUI
 
 struct ShadeSelectionView: View {
-    let onSelect: (ShadeChoice) -> Void
+    let onSelect: (ShadeChoice, Bool) -> Void
     let direction: ShadeAnimationDirection
-    
+
     @State private var whiteOpacity: Double = 0.0
     @State private var selectedShade: ShadeChoice? = nil
-    
-    init(onSelect: @escaping (ShadeChoice) -> Void, direction: ShadeAnimationDirection = .whiteToBlack) {
+    @State private var appearDate: Date = Date()
+
+    init(onSelect: @escaping (ShadeChoice, Bool) -> Void, direction: ShadeAnimationDirection = .whiteToBlack) {
         self.onSelect = onSelect
         self.direction = direction
     }
@@ -44,18 +45,20 @@ struct ShadeSelectionView: View {
             DragGesture(minimumDistance: 0, coordinateSpace: .local)
                 .onEnded { value in
                     guard selectedShade == nil else { return }
+                    let paused = Date().timeIntervalSince(appearDate) >= 3.0
                     let location = value.location
                     let screenWidth = UIScreen.main.bounds.width
                     if location.x < screenWidth / 2 {
                         selectedShade = .black
-                        onSelect(.black)
+                        onSelect(.black, paused)
                     } else {
                         selectedShade = .white
-                        onSelect(.white)
+                        onSelect(.white, paused)
                     }
                 }
         )
         .onAppear {
+            appearDate = Date()
             // 1s dwell, then fade in the rectangle over 3.5s
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 withAnimation(.linear(duration: 3.5)) {
@@ -68,8 +71,8 @@ struct ShadeSelectionView: View {
 
 struct ShadeSelectionView_Previews: PreviewProvider {
     static var previews: some View {
-        ShadeSelectionView(onSelect: { shade in
-            print("Selected: \(shade)")
+        ShadeSelectionView(onSelect: { shade, paused in
+            print("Selected: \(shade), paused: \(paused)")
         }, direction: .whiteToBlack)
     }
 }

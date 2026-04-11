@@ -100,10 +100,33 @@ struct ColorChannelView: View {
                         let curve: CGFloat = token.color == .blue ? blueCurve : (token.color == .green ? greenCurve : redCurve)
                         let t = (x - lineStartX) / lineLength
                         let yOffset = curveY(at: t, offset: curve)
-                        TokenShapeHelper.shapeView(
-                            shape: token.shape,
-                            color: ColorHelper.resolve(color: token.color, shade: token.shade)
-                        )
+                        ZStack {
+                            TokenShapeHelper.shapeView(
+                                shape: token.shape,
+                                color: ColorHelper.resolve(color: token.color, shade: token.shade)
+                            )
+                            if token.showALabel && token.showILabel && token.showMLabel {
+                                TokenShapeHelper.strokeView(shape: token.shape, lineWidth: 1, color: CoinTokenView.goldDark)
+                                    .scaleEffect(0.93)
+                            }
+                            VStack(spacing: 0) {
+                                if token.showALabel {
+                                    Text("A")
+                                        .font(.system(size: 3, weight: .bold))
+                                        .foregroundColor(CoinTokenView.goldLabel)
+                                }
+                                if token.showILabel {
+                                    Text("I")
+                                        .font(.system(size: 3, weight: .bold))
+                                        .foregroundColor(CoinTokenView.goldLabel)
+                                }
+                                if token.showMLabel {
+                                    Text("M")
+                                        .font(.system(size: 3, weight: .bold))
+                                        .foregroundColor(CoinTokenView.goldLabel)
+                                }
+                            }
+                        }
                         .frame(width: tokenSize, height: tokenSize)
                         .shadow(color: Color.white.opacity(0.3), radius: 2)
                         .position(x: x, y: baseY + yOffset)

@@ -50,6 +50,9 @@ struct TreasureChestView: View {
     let colorChoice: ColorChoice
     let shapeChoice: ShapeChoice
     let tokenID: String
+    var showALabel: Bool = false
+    var showILabel: Bool = false
+    var showMLabel: Bool = false
     let onComplete: () -> Void
 
     // Chest geometry constants
@@ -74,6 +77,20 @@ struct TreasureChestView: View {
 
     private var tokenColor: Color {
         ColorHelper.resolve(color: colorChoice, shade: shade)
+    }
+
+    private var tokenCoinView: some View {
+        CoinTokenView(
+            shade: shade,
+            colorChoice: colorChoice,
+            shapeChoice: shapeChoice,
+            xAngle: tokenXAngle,
+            yAngle: tokenYAngle,
+            showALabel: showALabel,
+            showILabel: showILabel,
+            showMLabel: showMLabel,
+            showGoldRim: showALabel && showILabel && showMLabel
+        )
     }
 
     // Lid animation derived values
@@ -228,21 +245,15 @@ struct TreasureChestView: View {
                     .frame(width: cw, height: depth)
                     .position(x: cx + cw / 2, y: cy - depth / 2)
 
-                // ── TOKEN INSIDE CHEST (behind front face) ─────────
+                // ── TOKEN INSIDE CHEST (behind front face, shown via zIndex) ─────────
                 if showToken && tokenInsideChest {
-                    CoinTokenView(
-                        shade: shade,
-                        colorChoice: colorChoice,
-                        shapeChoice: shapeChoice,
-                        xAngle: tokenXAngle,
-                        yAngle: tokenYAngle
-                    )
-                    .frame(width: 100, height: 100)
-                    .scaleEffect(tokenScale)
-                    .position(x: cx + cw / 2 + tokenX,
-                              y: cy + ch / 2 + tokenY)
-                    .shadow(color: tokenColor.opacity(0.6), radius: 10, y: 5)
-                    .opacity(tokenOpacity)
+                    tokenCoinView
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(tokenScale)
+                        .position(x: cx + cw / 2 + tokenX,
+                                  y: cy + ch / 2 + tokenY)
+                        .shadow(color: tokenColor.opacity(0.6), radius: 10, y: 5)
+                        .opacity(tokenOpacity)
                 }
 
                 // Front face
@@ -514,19 +525,13 @@ struct TreasureChestView: View {
 
                 // ── TOKEN IN FRONT (flying in phase) ─────────
                 if showToken && !tokenInsideChest {
-                    CoinTokenView(
-                        shade: shade,
-                        colorChoice: colorChoice,
-                        shapeChoice: shapeChoice,
-                        xAngle: tokenXAngle,
-                        yAngle: tokenYAngle
-                    )
-                    .frame(width: 100, height: 100)
-                    .scaleEffect(tokenScale)
-                    .position(x: cx + cw / 2 + tokenX,
-                              y: cy + ch / 2 + tokenY)
-                    .shadow(color: tokenColor.opacity(0.6), radius: 10, y: 5)
-                    .opacity(tokenOpacity)
+                    tokenCoinView
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(tokenScale)
+                        .position(x: cx + cw / 2 + tokenX,
+                                  y: cy + ch / 2 + tokenY)
+                        .shadow(color: tokenColor.opacity(0.6), radius: 10, y: 5)
+                        .opacity(tokenOpacity)
                 }
 
                 // No UI overlay - auto-navigates after animation
@@ -580,16 +585,16 @@ struct TreasureChestView: View {
                     tokenY = -40   // Slightly above chest opening
                     tokenScale = 0.5  // Smaller token
                 }
-                // Flip while flying in
+                // Flip while flying in — land face-up (full 360 so it ends flat)
                 withAnimation(.linear(duration: 1.2)) {
-                    tokenXAngle = 180
-                    tokenYAngle = 180
+                    tokenXAngle = 360
+                    tokenYAngle = 360
                 }
             }
         }
 
-        // Phase 4 — Token rises and shrinks (as if going into chest) (starts at 3.3 s) - DOUBLE DURATION
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.3) {
+        // Phase 4 — Token rises and shrinks (as if going into chest) (starts at 4.8 s after pause to show letters)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.8) {
             withAnimation(.easeInOut(duration: 2.0)) {
                 tokenY = -130  // Rise higher (same end location)
                 tokenScale = 0.4  // Smaller token
@@ -601,38 +606,37 @@ struct TreasureChestView: View {
             }
         }
 
-        // Phase 5 — Token drops down at same size (starts at 5.3 s) - DOUBLE DURATION
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.3) {
-            tokenInsideChest = true  // Switch to inside chest (behind front face)
-            withAnimation(.timingCurve(0.5, 0, 1, 1, duration: 2.4)) {
-                tokenY = ch / 16 - 10  // Drop less far (moved up by 10)
-                tokenScale = 0.4  // Smaller token
-                tokenOpacity = 0.8
+        // Phase 5 — Switch behind chest and drop down (starts at 6.8 s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6.8) {
+            tokenInsideChest = true
+            withAnimation(.timingCurve(0.5, 0, 1, 1, duration: 2.0)) {
+                tokenY = ch / 16 - 10
+                tokenScale = 0.4
             }
             // Flip while dropping - end at 0,0
-            withAnimation(.linear(duration: 2.4)) {
+            withAnimation(.linear(duration: 2.0)) {
                 tokenXAngle = 0
                 tokenYAngle = 0
             }
         }
 
-        // Phase 6 — Token fades out (starts at 5.0 s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+        // Phase 6 — Token fades out after drop starts (starts at 7.5 s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7.5) {
             withAnimation(.easeIn(duration: 1.0)) {
                 tokenOpacity = 0
                 tokenScale = 0.3
             }
         }
 
-        // Phase 7 — Lid closes with snap (starts at 6.0 s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 6.0) {
+        // Phase 7 — Lid closes with snap (starts at 9.0 s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 9.0) {
             withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 2.0)) {
                 lidOpen = 0
             }
         }
 
-        // Phase 8 — Auto-navigate (starts at 8.0 s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) {
+        // Phase 8 — Auto-navigate (starts at 11.0 s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 11.0) {
             onComplete()
         }
     }

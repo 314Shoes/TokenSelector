@@ -5,6 +5,9 @@ struct UseTokenView: View {
     let colorChoice: ColorChoice
     let shapeChoice: ShapeChoice
     let tokenID: String
+    var showALabel: Bool = false
+    var showILabel: Bool = false
+    var showMLabel: Bool = false
     let onDeposit: () -> Void
     let onCalendar: () -> Void
     
@@ -83,20 +86,27 @@ struct UseTokenView: View {
                 if tokenVisible {
                     coinTokenView
                         .frame(width: 124, height: 124)
+                        .contentShape(Rectangle())
                         .scaleEffect(tokenScale)
                         .offset(
                             x: offset.width,
                             y: offset.height
                         )
                         .gesture(
-                            DragGesture()
+                            DragGesture(minimumDistance: 0, coordinateSpace: .global)
                                 .onChanged { value in
                                     isDragging = true
-                                    offset = value.translation
+                                    offset = CGSize(
+                                        width: value.location.x - value.startLocation.x,
+                                        height: value.location.y - value.startLocation.y
+                                    )
                                 }
                                 .onEnded { value in
                                     isDragging = false
-                                    offset = value.translation
+                                    offset = CGSize(
+                                        width: value.location.x - value.startLocation.x,
+                                        height: value.location.y - value.startLocation.y
+                                    )
                                     handleUseTokenDrop(value.translation, geo: geo)
                                 }
                         )
@@ -117,10 +127,14 @@ struct UseTokenView: View {
             colorChoice: colorChoice,
             shapeChoice: shapeChoice,
             xAngle: xAngle,
-            yAngle: yAngle
+            yAngle: yAngle,
+            showALabel: showALabel,
+            showILabel: showILabel,
+            showMLabel: showMLabel,
+            showGoldRim: showALabel && showILabel && showMLabel
         )
     }
-    
+
     // MARK: - Drop Detection
     
     private func handleUseTokenDrop(_ translation: CGSize, geo: GeometryProxy) {
@@ -171,69 +185,34 @@ struct UseTokenView: View {
     }
     
     private func startDisappearAnimationAndRestart() {
-        isDisappearing = true
-        
-        let stages = FlipAnimationState.disappearStages
-        let stageCount = Double(stages.count)
-        
-        // Pre-calculate: axis goes from 90° to 210° (120° sweep)
-        let startAxis: Double = 90
-        let endAxis: Double = 210
-        
-        var delay: Double = 0
-        var cumulativeFlip: Double = 0
-        var currentSpeed: Double = 180
-        
-        for (i, stage) in stages.enumerated() {
-            let d = delay
-            let progress = Double(i + 1) / stageCount
-            let axisAngle = startAxis + (endAxis - startAxis) * progress
-            let axisRad = axisAngle * .pi / 180
-            cumulativeFlip += currentSpeed
-            
-            let targetX = cumulativeFlip * cos(axisRad)
-            let targetY = cumulativeFlip * sin(axisRad)
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + d) {
-                withAnimation(.linear(duration: stage.duration)) {
-                    self.xAngle = targetX
-                    self.yAngle = targetY
-                    self.tokenScale = stage.scale
-                }
-            }
-            currentSpeed = min(currentSpeed * 1.4, 480)
-            delay += stage.duration
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.05) {
-            self.onDeposit()
-        }
+        startDisappearAnimation(onComplete: onDeposit)
     }
-    
+
     private func startDisappearAnimationAndNavigateToCalendar() {
+        startDisappearAnimation(onComplete: onCalendar)
+    }
+
+    private func startDisappearAnimation(onComplete: @escaping () -> Void) {
         isDisappearing = true
-        
+
         let stages = FlipAnimationState.disappearStages
         let stageCount = Double(stages.count)
-        
-        // Pre-calculate: axis goes from 90° to 210° (120° sweep)
         let startAxis: Double = 90
         let endAxis: Double = 210
-        
+
         var delay: Double = 0
         var cumulativeFlip: Double = 0
         var currentSpeed: Double = 180
-        
+
         for (i, stage) in stages.enumerated() {
             let d = delay
             let progress = Double(i + 1) / stageCount
-            let axisAngle = startAxis + (endAxis - startAxis) * progress
-            let axisRad = axisAngle * .pi / 180
+            let axisRad = (startAxis + (endAxis - startAxis) * progress) * .pi / 180
             cumulativeFlip += currentSpeed
-            
+
             let targetX = cumulativeFlip * cos(axisRad)
             let targetY = cumulativeFlip * sin(axisRad)
-            
+
             DispatchQueue.main.asyncAfter(deadline: .now() + d) {
                 withAnimation(.linear(duration: stage.duration)) {
                     self.xAngle = targetX
@@ -244,9 +223,9 @@ struct UseTokenView: View {
             currentSpeed = min(currentSpeed * 1.4, 480)
             delay += stage.duration
         }
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.05) {
-            self.onCalendar()
+            onComplete()
         }
     }
     

@@ -94,15 +94,9 @@ struct CalendarView: View {
             
             // Man figure button for ColorChannelView
             Button(action: onColorChannel) {
-                ZStack {
-                    Circle()
-                        .fill(Color.black.opacity(0.1))
-                        .frame(width: 35, height: 35)
-                    
-                    Image("A1FF66D0-72A3-4382-B538-9EE37197DEA4_4_5005_c")
-                        .resizable()
-                        .frame(width: 25, height: 30)
-                }
+                Image("A1FF66D0-72A3-4382-B538-9EE37197DEA4_4_5005_c")
+                    .resizable()
+                    .frame(width: 25, height: 30)
             }
             .frame(width: 40, height: 40)
             .offset(y: 40)
@@ -184,10 +178,33 @@ struct CalendarView: View {
         let pos = tokenPosition(token: token, w: geoSize.width, h: geoSize.height)
         if pos.x >= 0 && pos.x <= geoSize.width && pos.y >= 0 && pos.y <= geoSize.height {
             VStack(spacing: 2) {
-                TokenShapeHelper.shapeView(
-                    shape: token.shape,
-                    color: ColorHelper.resolve(color: token.color, shade: token.shade)
-                )
+                ZStack {
+                    TokenShapeHelper.shapeView(
+                        shape: token.shape,
+                        color: ColorHelper.resolve(color: token.color, shade: token.shade)
+                    )
+                    if token.showALabel && token.showILabel && token.showMLabel {
+                        TokenShapeHelper.strokeView(shape: token.shape, lineWidth: 1, color: CoinTokenView.goldDark)
+                            .scaleEffect(0.93)
+                    }
+                    VStack(spacing: 0) {
+                        if token.showALabel {
+                            Text("A")
+                                .font(.system(size: 2, weight: .bold))
+                                .foregroundColor(CoinTokenView.goldLabel)
+                        }
+                        if token.showILabel {
+                            Text("I")
+                                .font(.system(size: 2, weight: .bold))
+                                .foregroundColor(CoinTokenView.goldLabel)
+                        }
+                        if token.showMLabel {
+                            Text("M")
+                                .font(.system(size: 2, weight: .bold))
+                                .foregroundColor(CoinTokenView.goldLabel)
+                        }
+                    }
+                }
                 .frame(width: 16, height: 16)
                 .shadow(color: Color.black.opacity(0.3), radius: 2)
                 

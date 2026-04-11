@@ -38,10 +38,34 @@ struct TreasureChestScreen: View {
                         ForEach(depositedTokens, id: \.id) { token in
                             VStack(spacing: 6) {
                                 // Token shape
-                                tokenShapeView(
-                                    shape: token.shape,
-                                    color: ColorHelper.resolve(color: token.color, shade: token.shade)
-                                )
+                                ZStack {
+                                    tokenShapeView(
+                                        shape: token.shape,
+                                        color: ColorHelper.resolve(color: token.color, shade: token.shade)
+                                    )
+                                    if token.showALabel && token.showILabel && token.showMLabel {
+                                        TokenShapeHelper.strokeView(shape: token.shape, lineWidth: 1.5, color: CoinTokenView.goldDark)
+                                            .scaleEffect(0.93)
+                                    }
+                                    VStack(spacing: 1) {
+                                        if token.showALabel {
+                                            Text("A")
+                                                .font(.system(size: 7, weight: .bold, design: .rounded))
+                                                .foregroundColor(CoinTokenView.goldLabel)
+                                        }
+                                        if token.showILabel {
+                                            Text("I")
+                                                .font(.system(size: 7, weight: .bold, design: .rounded))
+                                                .foregroundColor(CoinTokenView.goldLabel)
+                                        }
+                                        if token.showMLabel {
+                                            Text("M")
+                                                .font(.system(size: 7, weight: .bold, design: .rounded))
+                                                .foregroundColor(CoinTokenView.goldLabel)
+                                        }
+                                    }
+                                    .offset(y: labelCentroidOffset(for: token.shape, frameSize: 50))
+                                }
                                 .frame(width: 50, height: 50)
                                 .shadow(color: .black.opacity(0.3), radius: 2)
                                 
@@ -96,6 +120,11 @@ struct TreasureChestScreen: View {
         }
     }
     
+    private func labelCentroidOffset(for shape: ShapeChoice, frameSize: CGFloat) -> CGFloat {
+        let anchorY = TokenShapeHelper.centroidAnchor(for: shape).y
+        return (anchorY - 0.5) * frameSize
+    }
+
     private func tokenShapeView(shape: ShapeChoice, color: Color) -> some View {
         TokenShapeHelper.shapeView(shape: shape, color: color)
     }
@@ -118,6 +147,48 @@ struct DepositedToken: Identifiable, Codable {
     let color: ColorChoice
     let shape: ShapeChoice
     let depositedAt: Date
+    var showALabel: Bool
+    var showILabel: Bool
+    var showMLabel: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case id, shade, color, shape, depositedAt, showALabel, showILabel, showMLabel
+    }
+
+    init(id: String, shade: ShadeChoice, color: ColorChoice, shape: ShapeChoice, depositedAt: Date, showALabel: Bool = false, showILabel: Bool = false, showMLabel: Bool = false) {
+        self.id = id
+        self.shade = shade
+        self.color = color
+        self.shape = shape
+        self.depositedAt = depositedAt
+        self.showALabel = showALabel
+        self.showILabel = showILabel
+        self.showMLabel = showMLabel
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        shade = try container.decode(ShadeChoice.self, forKey: .shade)
+        color = try container.decode(ColorChoice.self, forKey: .color)
+        shape = try container.decode(ShapeChoice.self, forKey: .shape)
+        depositedAt = try container.decode(Date.self, forKey: .depositedAt)
+        showALabel = try container.decodeIfPresent(Bool.self, forKey: .showALabel) ?? true
+        showILabel = try container.decodeIfPresent(Bool.self, forKey: .showILabel) ?? false
+        showMLabel = try container.decodeIfPresent(Bool.self, forKey: .showMLabel) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(shade, forKey: .shade)
+        try container.encode(color, forKey: .color)
+        try container.encode(shape, forKey: .shape)
+        try container.encode(depositedAt, forKey: .depositedAt)
+        try container.encode(showALabel, forKey: .showALabel)
+        try container.encode(showILabel, forKey: .showILabel)
+        try container.encode(showMLabel, forKey: .showMLabel)
+    }
 }
 
 struct TreasureChestScreen_Previews: PreviewProvider {

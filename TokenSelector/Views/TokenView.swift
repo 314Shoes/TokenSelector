@@ -5,6 +5,9 @@ struct TokenView: View {
     let colorChoice: ColorChoice
     let shapeChoice: ShapeChoice
     let tokenID: String
+    var showALabel: Bool = false
+    var showILabel: Bool = false
+    var showMLabel: Bool = false
     let onRestart: () -> Void
     let onUseToken: () -> Void
     
@@ -17,6 +20,18 @@ struct TokenView: View {
     @State private var tokenVisible = true
     @State private var screenHeight: CGFloat = 0
     @State private var sectionsOpacity: Double = 0
+    // Letter-by-letter reveal state (opacity-based so layout is stable)
+    @State private var aOpacity: Double = 0
+    @State private var iOpacity: Double = 0
+    @State private var mOpacity: Double = 0
+    @State private var rimRevealed: Bool = false
+    @State private var rimProgress: CGFloat = 0
+    // Fireworks state
+    @State private var fireworksActive: Bool = false
+    @State private var sparkExpand: CGFloat = 0
+    @State private var sparkOpacity: Double = 1.0
+    @State private var ringScales: [CGFloat] = [0.3, 0.3, 0.3, 0.3]
+    @State private var ringOpacity: Double = 1.0
     
     private let flipDuration: Double = FlipAnimationState.flipDuration
     
@@ -36,8 +51,16 @@ struct TokenView: View {
                 
                 // Token overlay - floats above all sections
                 if tokenVisible {
-                    draggableToken
-                        .position(x: geo.size.width / 2, y: geo.size.height / 6)
+                    ZStack {
+                        draggableToken
+
+                        // Fireworks explosion
+                        if fireworksActive {
+                            fireworksView
+                                .allowsHitTesting(false)
+                        }
+                    }
+                    .position(x: geo.size.width / 2, y: geo.size.height / 6)
                 }
             }
             .onAppear {
@@ -47,6 +70,8 @@ struct TokenView: View {
                 withAnimation(.easeIn(duration: 0.8)) {
                     sectionsOpacity = 1.0
                 }
+                // Start the letter-by-letter reveal sequence
+                startLetterRevealSequence()
             }
         }
         .ignoresSafeArea()
@@ -92,10 +117,11 @@ struct TokenView: View {
     private var draggableToken: some View {
         coinTokenView
             .frame(width: 124, height: 124)
-            .scaleEffect(isDisappearing ? disappearScale : (isDragging ? 1.1 : 1.0))
+            .contentShape(Rectangle())
+            .scaleEffect(isDisappearing ? disappearScale : 1.0)
             .offset(x: offset.width, y: offset.height)
             .gesture(
-                DragGesture(coordinateSpace: .global)
+                DragGesture(minimumDistance: 0, coordinateSpace: .global)
                     .onChanged { value in
                         guard !isDisappearing else { return }
                         isDragging = true
@@ -137,16 +163,129 @@ struct TokenView: View {
             colorChoice: colorChoice,
             shapeChoice: shapeChoice,
             xAngle: xAngle,
-            yAngle: yAngle
+            yAngle: yAngle,
+            showALabel: showALabel,
+            showILabel: showILabel,
+            showMLabel: showMLabel,
+            aLabelOpacity: aOpacity,
+            iLabelOpacity: iOpacity,
+            mLabelOpacity: mOpacity,
+            showGoldRim: rimRevealed,
+            rimProgress: rimProgress
         )
     }
-    
+
+    // MARK: - Fireworks
+
+    private let sparkAngles: [Double] = (0..<20).map { Double($0) * 18.0 }
+
+    @ViewBuilder
+    private var fireworksView: some View {
+        ZStack {
+            // Expanding rings
+            ForEach(0..<4, id: \.self) { i in
+                Circle()
+                    .stroke(
+                        CoinTokenView.goldLight.opacity(ringOpacity * (0.8 - Double(i) * 0.15)),
+                        lineWidth: CGFloat(3 - i)
+                    )
+                    .frame(width: 50, height: 50)
+                    .scaleEffect(ringScales[i])
+            }
+
+            // Sparks radiating outward
+            ForEach(0..<20, id: \.self) { i in
+                let angle = sparkAngles[i] * .pi / 180
+                let dist = (60 + CGFloat(i % 4) * 25) * sparkExpand
+                Circle()
+                    .fill(CoinTokenView.goldLight)
+                    .frame(width: CGFloat(4 - i % 3), height: CGFloat(4 - i % 3))
+                    .offset(x: CGFloat(cos(angle)) * dist, y: CGFloat(sin(angle)) * dist)
+                    .opacity(sparkOpacity * (i % 2 == 0 ? 1.0 : 0.7))
+            }
+        }
+    }
+
+    // MARK: - Letter-by-Letter Reveal
+
+    private func startLetterRevealSequence() {
+        var delay: Double = 1.0  // initial settle time
+
+        // 1. Reveal "A" if earned (waited 6 pulses)
+        if showALabel {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.easeOut(duration: 0.4)) { aOpacity = 1.0 }
+            }
+            delay += 0.6
+        }
+
+        // 2. Reveal "I" if earned
+        if showILabel {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.easeOut(duration: 0.4)) { iOpacity = 1.0 }
+            }
+            delay += 0.6
+        }
+
+        // 3. Reveal "M" if earned
+        if showMLabel {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.easeOut(duration: 0.4)) { mOpacity = 1.0 }
+            }
+            delay += 0.8
+        }
+
+        // 4. Rim traces around the token (only if AIM complete)
+        if showALabel && showILabel && showMLabel {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                rimRevealed = true
+                withAnimation(.easeInOut(duration: 1.5)) {
+                    rimProgress = 1.0
+                }
+            }
+            delay += 1.8
+
+            // 5. Fireworks explosion — then gone forever
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                triggerFireworks()
+            }
+        }
+    }
+
+    private func triggerFireworks() {
+        fireworksActive = true
+        sparkExpand = 0
+        sparkOpacity = 1.0
+        ringOpacity = 1.0
+        ringScales = [0.3, 0.3, 0.3, 0.3]
+
+        // Rings burst outward at staggered times
+        withAnimation(.easeOut(duration: 0.6)) { ringScales[0] = 4.0 }
+        withAnimation(.easeOut(duration: 0.8).delay(0.05)) { ringScales[1] = 5.5 }
+        withAnimation(.easeOut(duration: 1.0).delay(0.1)) { ringScales[2] = 7.0 }
+        withAnimation(.easeOut(duration: 1.2).delay(0.15)) { ringScales[3] = 9.0 }
+
+        // Sparks fly outward
+        withAnimation(.easeOut(duration: 1.0)) { sparkExpand = 1.0 }
+
+        // Everything fades
+        withAnimation(.easeIn(duration: 0.8).delay(0.4)) {
+            sparkOpacity = 0
+            ringOpacity = 0
+        }
+
+        // Remove fireworks completely
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            fireworksActive = false
+        }
+    }
+
     // MARK: - Animation
-    
+
     private enum DisappearTarget {
         case restart, useToken
     }
-    
+
     private func startFlipSequence() {
         guard !isDisappearing else { return }
         
@@ -231,7 +370,8 @@ struct CoinFaceEffect: AnimatableModifier {
     var isFront: Bool
     var isEdge: Bool
     var perspective: CGFloat = 1800
-    
+    var anchorY: CGFloat = 0.5
+
     var animatableData: AnimatablePair<Double, Double> {
         get { AnimatablePair(xAngle, yAngle) }
         set {
@@ -239,7 +379,7 @@ struct CoinFaceEffect: AnimatableModifier {
             yAngle = newValue.second
         }
     }
-    
+
     private func faceOpacity() -> Double {
         guard !isEdge else { return 1 }
         let xRad = xAngle * .pi / 180
@@ -248,14 +388,15 @@ struct CoinFaceEffect: AnimatableModifier {
         let raw = isFront ? facing : -facing
         return max(0, min(1, (raw + 0.1) / 0.2))
     }
-    
+
     func body(content: Content) -> some View {
         content
             .modifier(CoinLayerEffect(
                 xAngle: xAngle,
                 yAngle: yAngle,
                 zOffset: zOffset,
-                perspective: perspective
+                perspective: perspective,
+                anchorY: anchorY
             ))
             .opacity(faceOpacity())
     }
@@ -268,7 +409,8 @@ struct CoinLayerEffect: GeometryEffect {
     var yAngle: Double
     var zOffset: CGFloat
     var perspective: CGFloat = 1800
-    
+    var anchorY: CGFloat = 0.5
+
     var animatableData: AnimatablePair<Double, Double> {
         get { AnimatablePair(xAngle, yAngle) }
         set {
@@ -276,21 +418,21 @@ struct CoinLayerEffect: GeometryEffect {
             yAngle = newValue.second
         }
     }
-    
+
     func effectValue(size: CGSize) -> ProjectionTransform {
         var t = CATransform3DIdentity
         t.m34 = -1 / perspective
-        
+
         let cx = size.width / 2
-        let cy = size.height / 2
-        
-        // Center → rotate X → rotate Y → offset Z depth → uncenter
+        let cy = size.height * anchorY
+
+        // Centroid → rotate X → rotate Y → offset Z depth → un-centroid
         t = CATransform3DTranslate(t, cx, cy, 0)
         t = CATransform3DRotate(t, xAngle * .pi / 180, 1, 0, 0)
         t = CATransform3DRotate(t, yAngle * .pi / 180, 0, 1, 0)
         t = CATransform3DTranslate(t, 0, 0, zOffset)
         t = CATransform3DTranslate(t, -cx, -cy, 0)
-        
+
         return ProjectionTransform(t)
     }
 }

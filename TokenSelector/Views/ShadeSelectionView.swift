@@ -43,7 +43,7 @@ struct ShadeSelectionView: View {
         .contentShape(Rectangle())
         .gesture(
             DragGesture(minimumDistance: 0, coordinateSpace: .local)
-                .onEnded { value in
+                .onChanged { value in
                     guard selectedShade == nil else { return }
                     let paused = Date().timeIntervalSince(appearDate) >= 3.0
                     let location = value.location
@@ -59,9 +59,9 @@ struct ShadeSelectionView: View {
         )
         .onAppear {
             appearDate = Date()
-            // 1s dwell, then fade in the rectangle over 3.5s
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                withAnimation(.linear(duration: 3.5)) {
+            // 0.3s dwell, then fade in the rectangle over 0.8s
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.linear(duration: 0.8)) {
                     whiteOpacity = 1.0
                 }
             }

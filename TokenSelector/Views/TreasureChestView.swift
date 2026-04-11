@@ -566,77 +566,73 @@ struct TreasureChestView: View {
             }
         }
 
-        // Phase 3 — Token enters from left side (starts at 1.5 s)
+        // Phase 3 — Token enters from left, slides to front of chest (starts at 1.5s)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             showToken = true
             tokenOpacity = 1.0
-            tokenScale = 0.8  // Smaller token
-            tokenX = -280  // Start further left
-            tokenY = 30    // Start below chest
+            tokenScale = 0.6
+            tokenX = -280
+            tokenY = 0
             tokenXAngle = 0
             tokenYAngle = 0
-            
-            // Wait before moving (0.6s show flat time)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                // Fluid physics: smooth approach to chest center
-                withAnimation(.easeOut(duration: 1.2)) {
-                    tokenOpacity = 1.0
-                    tokenX = 30     // Move to chest center
-                    tokenY = -40   // Slightly above chest opening
-                    tokenScale = 0.5  // Smaller token
-                }
-                // Flip while flying in — land face-up (full 360 so it ends flat)
-                withAnimation(.linear(duration: 1.2)) {
-                    tokenXAngle = 360
-                    tokenYAngle = 360
-                }
+
+            // Slide to front of chest (face-up, no spinning)
+            withAnimation(.easeOut(duration: 1.2)) {
+                tokenX = 0
+                tokenY = 0
+                tokenScale = 0.5
             }
         }
 
-        // Phase 4 — Token rises and shrinks (as if going into chest) (starts at 4.8 s after pause to show letters)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.8) {
-            withAnimation(.easeInOut(duration: 2.0)) {
-                tokenY = -130  // Rise higher (same end location)
-                tokenScale = 0.4  // Smaller token
+        // Phase 4 — Brief pause in front of chest showing letters (2.7s–4.0s)
+        // (token is stationary and face-up for 1.3s)
+
+        // Phase 5 — Flip and rise up+right into the lifted lid (starts at 4.0s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+            withAnimation(.easeInOut(duration: 1.5)) {
+                tokenX = 25     // Slight shift right (toward 3D depth)
+                tokenY = -200   // Rise higher into lid area
+                tokenScale = 0.35 // Shrink slightly (further back into depth)
             }
-            // Continue flipping
-            withAnimation(.linear(duration: 2.0)) {
-                tokenXAngle += 180
-                tokenYAngle += 180
+            withAnimation(.linear(duration: 1.5)) {
+                tokenXAngle = 720
+                tokenYAngle = 360
             }
         }
 
-        // Phase 5 — Switch behind chest and drop down (starts at 6.8 s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 6.8) {
+        // Phase 6 — Brief pause at top inside lid (5.5s–6.5s)
+        // (token holds position for 1.0s)
+
+        // Phase 7 — Drop down into chest (starts at 6.5s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6.5) {
             tokenInsideChest = true
-            withAnimation(.timingCurve(0.5, 0, 1, 1, duration: 2.0)) {
+            withAnimation(.easeIn(duration: 1.0)) {
                 tokenY = ch / 16 - 10
-                tokenScale = 0.4
+                tokenScale = 0.35
             }
-            // Flip while dropping - end at 0,0
-            withAnimation(.linear(duration: 2.0)) {
+            withAnimation(.linear(duration: 1.0)) {
                 tokenXAngle = 0
                 tokenYAngle = 0
             }
         }
 
-        // Phase 6 — Token fades out after drop starts (starts at 7.5 s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 7.5) {
-            withAnimation(.easeIn(duration: 1.0)) {
+        // Phase 8 — Token fades as it drops (starts at 7.0s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7.0) {
+            withAnimation(.easeIn(duration: 0.8)) {
                 tokenOpacity = 0
-                tokenScale = 0.3
+                tokenScale = 0.25
             }
         }
 
-        // Phase 7 — Lid closes with snap (starts at 9.0 s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 9.0) {
-            withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 2.0)) {
+        // Phase 9 — Lid closes (starts at 8.0s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) {
+            withAnimation(.timingCurve(0.4, 0, 0.2, 1, duration: 1.5)) {
                 lidOpen = 0
             }
         }
 
-        // Phase 8 — Auto-navigate (starts at 11.0 s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 11.0) {
+        // Phase 10 — Auto-navigate (starts at 9.8s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 9.8) {
             onComplete()
         }
     }

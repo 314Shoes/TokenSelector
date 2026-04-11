@@ -18,6 +18,7 @@ struct UseTokenView: View {
     @State private var tokenScale: CGFloat = 0.01
     @State private var tokenVisible = false
     @State private var isDisappearing = false
+    @State private var currentFlipAxis: Double = 0 // 0 = x-axis, 90 = y-axis
     
     private let flipDuration: Double = FlipAnimationState.flipDuration
     
@@ -195,32 +196,31 @@ struct UseTokenView: View {
     private func startDisappearAnimation(onComplete: @escaping () -> Void) {
         isDisappearing = true
 
-        let stages = FlipAnimationState.disappearStages
-        let stageCount = Double(stages.count)
-        let startAxis: Double = 90
-        let endAxis: Double = 210
+        let onX = currentFlipAxis == 0
+
+        let stages: [(duration: Double, scale: CGFloat, primaryFrac: Double)] = [
+            (0.60, 0.80, 1.0),
+            (0.45, 0.60, 0.75),
+            (0.33, 0.40, 0.50),
+            (0.23, 0.20, 0.25),
+            (0.15, 0.01, 0.0),
+        ]
 
         var delay: Double = 0
-        var cumulativeFlip: Double = 0
-        var currentSpeed: Double = 180
+        let spin: Double = 360
 
-        for (i, stage) in stages.enumerated() {
+        for stage in stages {
             let d = delay
-            let progress = Double(i + 1) / stageCount
-            let axisRad = (startAxis + (endAxis - startAxis) * progress) * .pi / 180
-            cumulativeFlip += currentSpeed
-
-            let targetX = cumulativeFlip * cos(axisRad)
-            let targetY = cumulativeFlip * sin(axisRad)
+            let addX = onX ? spin * stage.primaryFrac : spin * (1.0 - stage.primaryFrac)
+            let addY = onX ? spin * (1.0 - stage.primaryFrac) : spin * stage.primaryFrac
 
             DispatchQueue.main.asyncAfter(deadline: .now() + d) {
                 withAnimation(.linear(duration: stage.duration)) {
-                    self.xAngle = targetX
-                    self.yAngle = targetY
+                    self.xAngle += addX
+                    self.yAngle += addY
                     self.tokenScale = stage.scale
                 }
             }
-            currentSpeed = min(currentSpeed * 1.4, 480)
             delay += stage.duration
         }
 
@@ -281,21 +281,20 @@ struct UseTokenView: View {
     
     private func startFlipSequence() {
         guard !isDisappearing else { return }
-        
-        // Full 360° horizontal flip
+
+        currentFlipAxis = 0 // x-axis
         withAnimation(.linear(duration: flipDuration)) {
             xAngle += 360
         }
-        
-        // After horizontal completes, reset X and do vertical flip
+
         DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration) {
             guard !self.isDisappearing else { return }
             self.xAngle = 0
+            self.currentFlipAxis = 90 // y-axis
             withAnimation(.linear(duration: self.flipDuration)) {
                 self.yAngle += 360
             }
-            
-            // After vertical completes, reset Y and restart
+
             DispatchQueue.main.asyncAfter(deadline: .now() + self.flipDuration) {
                 guard !self.isDisappearing else { return }
                 self.yAngle = 0

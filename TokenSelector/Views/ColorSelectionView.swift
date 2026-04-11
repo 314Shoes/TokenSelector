@@ -48,19 +48,28 @@ struct ColorSelectionView: View {
                     resolvedColor(for: .blue)
                         .frame(height: geo.size.height / 3)
                         .contentShape(Rectangle())
-                        .onTapGesture { selectColor(.blue) }
-                    
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { _ in selectColor(.blue) }
+                        )
+
                     // Green row
                     resolvedColor(for: .green)
                         .frame(height: geo.size.height / 3)
                         .contentShape(Rectangle())
-                        .onTapGesture { selectColor(.green) }
-                    
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { _ in selectColor(.green) }
+                        )
+
                     // Red row
                     resolvedColor(for: .red)
                         .frame(height: geo.size.height / 3)
                         .contentShape(Rectangle())
-                        .onTapGesture { selectColor(.red) }
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { _ in selectColor(.red) }
+                        )
                 }
                 .offset(x: wipeOffset)
                 
@@ -126,13 +135,13 @@ struct ColorSelectionView: View {
         let paused = Date().timeIntervalSince(appearDate) >= 3.0
         selectedColor = color
 
-        // Wipe starts immediately, same pace as shade selection wipe (3.5s linear)
-        withAnimation(.linear(duration: 3.5)) {
+        // Wipe fills screen — velocity matched to shade's black fade
+        withAnimation(.linear(duration: 2.0)) {
             wipeScale = 1.0
         }
 
         // Transition after wipe completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             onSelect(color, paused)
         }
     }

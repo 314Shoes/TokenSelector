@@ -17,6 +17,7 @@ struct TokenView: View {
     @State private var isDragging = false
     @State private var isDisappearing = false
     @State private var disappearScale: CGFloat = 1.0
+    @State private var currentFlipAxis: Double = 0 // 0 = x-axis, 90 = y-axis
     @State private var tokenVisible = true
     @State private var screenHeight: CGFloat = 0
     @State private var sectionsOpacity: Double = 0
@@ -288,21 +289,20 @@ struct TokenView: View {
 
     private func startFlipSequence() {
         guard !isDisappearing else { return }
-        
-        // Full 360° horizontal flip
+
+        currentFlipAxis = 0 // x-axis
         withAnimation(.linear(duration: flipDuration)) {
             xAngle += 360
         }
-        
-        // After horizontal completes, reset X and do vertical flip
+
         DispatchQueue.main.asyncAfter(deadline: .now() + flipDuration) {
             guard !self.isDisappearing else { return }
             self.xAngle = 0
+            self.currentFlipAxis = 90 // y-axis
             withAnimation(.linear(duration: self.flipDuration)) {
                 self.yAngle += 360
             }
-            
-            // After vertical completes, reset Y and restart
+
             DispatchQueue.main.asyncAfter(deadline: .now() + self.flipDuration) {
                 guard !self.isDisappearing else { return }
                 self.yAngle = 0
@@ -310,45 +310,40 @@ struct TokenView: View {
             }
         }
     }
-    
+
     private func startDisappearAnimation(target: DisappearTarget) {
         isDisappearing = true
-        
-        let stages = FlipAnimationState.disappearStages
-        let stageCount = Double(stages.count)
-        
-        // Pre-calculate: axis goes from 90° to 210° (120° sweep)
-        let startAxis: Double = 90
-        let endAxis: Double = 210
-        
+
+        let onX = currentFlipAxis == 0 // true = currently flipping on x
+
+        // Each stage: shorter duration (accelerating), shrinking, axis shifts 90°
+        // Rotation is additive — no jump from current values
+        let stages: [(duration: Double, scale: CGFloat, primaryFrac: Double)] = [
+            (0.60, 0.80, 1.0),   // 100% current axis
+            (0.45, 0.60, 0.75),  // 75% current, 25% other
+            (0.33, 0.40, 0.50),  // 50/50
+            (0.23, 0.20, 0.25),  // 25% current, 75% other
+            (0.15, 0.01, 0.0),   // 100% other axis
+        ]
+
         var delay: Double = 0
-        var cumulativeFlip: Double = 0
-        var currentSpeed: Double = 180  // Starting flip degrees per stage
-        
-        for (i, stage) in stages.enumerated() {
+        let spin: Double = 360
+
+        for stage in stages {
             let d = delay
-            // Pre-compute the axis angle at the END of this stage
-            let progress = Double(i + 1) / stageCount
-            let axisAngle = startAxis + (endAxis - startAxis) * progress
-            let axisRad = axisAngle * .pi / 180
-            cumulativeFlip += currentSpeed
-            
-            // Pre-compute target x/y from axis + cumulative flip
-            let targetX = cumulativeFlip * cos(axisRad)
-            let targetY = cumulativeFlip * sin(axisRad)
-            
+            let addX = onX ? spin * stage.primaryFrac : spin * (1.0 - stage.primaryFrac)
+            let addY = onX ? spin * (1.0 - stage.primaryFrac) : spin * stage.primaryFrac
+
             DispatchQueue.main.asyncAfter(deadline: .now() + d) {
                 withAnimation(.linear(duration: stage.duration)) {
-                    self.xAngle = targetX
-                    self.yAngle = targetY
+                    self.xAngle += addX
+                    self.yAngle += addY
                     self.disappearScale = stage.scale
                 }
             }
-            currentSpeed = min(currentSpeed * 1.4, 480)
             delay += stage.duration
         }
-        
-        // After all stages complete, hide and navigate
+
         DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.05) {
             self.tokenVisible = false
             switch target {

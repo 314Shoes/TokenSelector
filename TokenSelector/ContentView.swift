@@ -438,7 +438,7 @@ struct IntroScreenView: View {
                         .fill(Color.white)
                         .frame(width: 40, height: 40)
                         .scaleEffect(centerStarScale)
-                        .scaleEffect(pulseScale)
+                        .scaleEffect(screenTapped ? 1.0 : pulseScale)
                         .shadow(color: .white, radius: screenTapped ? 80 : 15)
                         .shadow(color: .white.opacity(screenTapped ? 1.0 : 0.5), radius: screenTapped ? 120 : 30)
                         .overlay(
@@ -446,16 +446,19 @@ struct IntroScreenView: View {
                             Circle()
                                 .fill(Color.clear)
                                 .contentShape(Circle())
-                                .onTapGesture {
-                                    handleTap(onStar: true)
-                                }
+                                .gesture(
+                                    DragGesture(minimumDistance: 0)
+                                        .onChanged { _ in handleTap(onStar: true) }
+                                )
                         )
                 }
             }
         }
-        .onTapGesture {
-            handleTap(onStar: false)
-        }
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in handleTap(onStar: false) }
+        )
         .onAppear {
             startIntroSequence()
         }
@@ -463,7 +466,12 @@ struct IntroScreenView: View {
     
     private func handleTap(onStar: Bool) {
         guard !screenTapped else { return }
-        screenTapped = true
+        // Set screenTapped without animation so pulseScale is instantly removed
+        var t = Transaction()
+        t.disablesAnimations = true
+        withTransaction(t) {
+            screenTapped = true
+        }
 
         let direction: ShadeAnimationDirection = onStar ? .whiteToBlack : .blackToWhite
 
@@ -476,20 +484,20 @@ struct IntroScreenView: View {
         }
 
         if onStar {
-            withAnimation(.easeIn(duration: 2.5)) {
+            withAnimation(.easeOut(duration: 4.0)) {
                 centerStarScale = 30
                 starOpacity = 0
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.3) {
                 self.onComplete(direction, waited6Pulses)
             }
         } else {
             showBlackCircleWipe = true
-            withAnimation(.easeInOut(duration: 2.5)) {
+            withAnimation(.easeInOut(duration: 4.0)) {
                 blackCircleRadius = 0
                 centerStarScale = 0.001
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.3) {
                 self.onComplete(direction, waited6Pulses)
             }
         }

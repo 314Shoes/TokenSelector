@@ -97,6 +97,17 @@ struct ContentView: View {
                     shapePaused = paused
                     if showM { showMLabel = true }
                     tokenID = generateTokenID()
+                    // Save token to history as soon as it's created
+                    TokenStorage.deposit(DepositedToken(
+                        id: tokenID,
+                        shade: selectedShade,
+                        color: selectedColor,
+                        shape: shape,
+                        depositedAt: Date(),
+                        showALabel: showALabel,
+                        showILabel: showILabel,
+                        showMLabel: showMLabel
+                    ))
                     currentScreen = .token
                 }
                 
@@ -137,16 +148,6 @@ struct ContentView: View {
                     showILabel: showILabel,
                     showMLabel: showMLabel,
                     onDeposit: {
-                        TokenStorage.deposit(DepositedToken(
-                            id: tokenID,
-                            shade: selectedShade,
-                            color: selectedColor,
-                            shape: selectedShape,
-                            depositedAt: Date(),
-                            showALabel: showALabel,
-                            showILabel: showILabel,
-                            showMLabel: showMLabel
-                        ))
                         withAnimation(.easeInOut(duration: 0.5)) {
                             currentScreen = .treasureChestAnimation
                         }
@@ -438,7 +439,7 @@ struct IntroScreenView: View {
                         .fill(Color.white)
                         .frame(width: 40, height: 40)
                         .scaleEffect(centerStarScale)
-                        .scaleEffect(screenTapped ? 1.0 : pulseScale)
+                        .scaleEffect(pulseScale)
                         .shadow(color: .white, radius: screenTapped ? 80 : 15)
                         .shadow(color: .white.opacity(screenTapped ? 1.0 : 0.5), radius: screenTapped ? 120 : 30)
                         .overlay(
@@ -466,12 +467,7 @@ struct IntroScreenView: View {
     
     private func handleTap(onStar: Bool) {
         guard !screenTapped else { return }
-        // Set screenTapped without animation so pulseScale is instantly removed
-        var t = Transaction()
-        t.disablesAnimations = true
-        withTransaction(t) {
-            screenTapped = true
-        }
+        screenTapped = true
 
         let direction: ShadeAnimationDirection = onStar ? .whiteToBlack : .blackToWhite
 

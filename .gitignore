@@ -22,3 +22,4 @@ Pods/
 .DS_Store
 *.swp
 *~.nib
+.token_backup.json

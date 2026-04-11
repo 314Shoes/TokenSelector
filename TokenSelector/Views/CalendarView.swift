@@ -19,8 +19,19 @@ struct CalendarView: View {
         return labels.reversed() // reversed so index 0 = top (03:00), last = bottom (02:00)
     }()
     
-    // X-axis days: Today, Sat, Fri, Thu, Wed, Tue, Mon
-    private let xLabels: [String] = ["Today", "Sat", "Fri", "Thu", "Wed", "Tue", "Mon"]
+    // X-axis days: Today, then previous 6 days by weekday name
+    private let xLabels: [String] = {
+        let cal = Calendar.current
+        let today = Date()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE" // Mon, Tue, etc.
+        var labels = ["Today"]
+        for i in 1...6 {
+            let date = cal.date(byAdding: .day, value: -i, to: today)!
+            labels.append(formatter.string(from: date))
+        }
+        return labels
+    }()
     
     var body: some View {
         ZStack {
@@ -233,9 +244,8 @@ struct CalendarView: View {
         let hour = comps.hour ?? 0
         let minute = comps.minute ?? 0
         
-        // Going backward from 02:00: 02, 01, 00, 23, 22, ..., 03
-        // Position from top: 03:00=0, 02:00=1, 01:00=2, 00:00=3, 23:00=4, ..., 03:00=24
-        let stepsFromTop = (3 - hour + 24) % 24
+        // Position from top: 03:00=0, 04:00=1, ..., 23:00=20, 00:00=21, 01:00=22, 02:00=23
+        let stepsFromTop = (hour - 3 + 24) % 24
         let minuteFraction = CGFloat(minute) / 60.0
         let normalizedY = (CGFloat(stepsFromTop) + minuteFraction) / 24.0
         let y = normalizedY * h

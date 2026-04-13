@@ -162,25 +162,16 @@ struct CoinTokenView: View {
 enum FlipAnimationState {
     static let flipDuration: Double = 3.0
 
-    struct DisappearStage {
+    struct AnimationStage {
         let duration: Double
         let scale: CGFloat
-        let axis: String
     }
 
-    static let disappearStages: [DisappearStage] = [
-        DisappearStage(duration: 1.00, scale: 0.80, axis: "x"),
-        DisappearStage(duration: 0.76, scale: 0.60, axis: "y"),
-        DisappearStage(duration: 0.56, scale: 0.40, axis: "x"),
-        DisappearStage(duration: 0.36, scale: 0.20, axis: "y"),
-        DisappearStage(duration: 0.20, scale: 0.01, axis: "x"),
-    ]
-
-    static let appearStages: [DisappearStage] = [
-        DisappearStage(duration: 0.20, scale: 0.20, axis: "x"),
-        DisappearStage(duration: 0.36, scale: 0.40, axis: "y"),
-        DisappearStage(duration: 0.56, scale: 0.60, axis: "x"),
-        DisappearStage(duration: 0.76, scale: 0.80, axis: "y"),
-        DisappearStage(duration: 1.00, scale: 1.00, axis: "x"),
+    static let appearStages: [AnimationStage] = [
+        AnimationStage(duration: 0.20, scale: 0.20),
+        AnimationStage(duration: 0.36, scale: 0.40),
+        AnimationStage(duration: 0.56, scale: 0.60),
+        AnimationStage(duration: 0.76, scale: 0.80),
+        AnimationStage(duration: 1.00, scale: 1.00),
     ]
 }

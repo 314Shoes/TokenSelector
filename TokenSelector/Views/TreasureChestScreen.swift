@@ -25,7 +25,7 @@ struct TreasureChestScreen: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
-                    .padding(.top, 20)
+                    .padding(.top, 60)
                 
                 // Token count
                 Text("\(depositedTokens.count) Tokens")
@@ -37,45 +37,14 @@ struct TreasureChestScreen: View {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 20) {
                         ForEach(depositedTokens, id: \.id) { token in
                             VStack(spacing: 6) {
-                                // Token shape
-                                ZStack {
-                                    tokenShapeView(
-                                        shape: token.shape,
-                                        color: ColorHelper.resolve(color: token.color, shade: token.shade)
-                                    )
-                                    if token.showALabel && token.showILabel && token.showMLabel {
-                                        TokenShapeHelper.strokeView(shape: token.shape, lineWidth: 1.5, color: CoinTokenView.goldDark)
-                                            .scaleEffect(0.93)
-                                    }
-                                    VStack(spacing: 1) {
-                                        if token.showALabel {
-                                            Text("A")
-                                                .font(.system(size: 7, weight: .bold, design: .rounded))
-                                                .foregroundColor(CoinTokenView.goldLabel)
-                                        }
-                                        if token.showILabel {
-                                            Text("I")
-                                                .font(.system(size: 7, weight: .bold, design: .rounded))
-                                                .foregroundColor(CoinTokenView.goldLabel)
-                                        }
-                                        if token.showMLabel {
-                                            Text("M")
-                                                .font(.system(size: 7, weight: .bold, design: .rounded))
-                                                .foregroundColor(CoinTokenView.goldLabel)
-                                        }
-                                    }
-                                    .offset(y: labelCentroidOffset(for: token.shape, frameSize: 50))
-                                }
-                                .frame(width: 50, height: 50)
-                                .shadow(color: .black.opacity(0.3), radius: 2)
-                                
-                                // Token ID
+                                TokenBadgeView(token: token, size: 50)
+                                    .shadow(color: .black.opacity(0.3), radius: 2)
+
                                 Text(String(token.id.suffix(4)))
                                     .font(.caption)
                                     .fontWeight(.semibold)
                                     .foregroundColor(.white.opacity(0.8))
-                                
-                                // Date/Time stamp
+
                                 Text(formatDate(token.depositedAt))
                                     .font(.caption2)
                                     .foregroundColor(.white.opacity(0.5))
@@ -118,15 +87,6 @@ struct TreasureChestScreen: View {
         .onAppear {
             loadDepositedTokens()
         }
-    }
-    
-    private func labelCentroidOffset(for shape: ShapeChoice, frameSize: CGFloat) -> CGFloat {
-        let anchorY = TokenShapeHelper.centroidAnchor(for: shape).y
-        return (anchorY - 0.5) * frameSize
-    }
-
-    private func tokenShapeView(shape: ShapeChoice, color: Color) -> some View {
-        TokenShapeHelper.shapeView(shape: shape, color: color)
     }
     
     private func loadDepositedTokens() {

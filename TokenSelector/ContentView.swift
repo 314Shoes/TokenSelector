@@ -254,6 +254,7 @@ struct IntroScreenView: View {
     @State private var wave1 = false
     @State private var wave2 = false
     @State private var wave3 = false
+    @State private var wavesStarted = false
     // Black circle wipe for non-star taps
     @State private var showBlackCircleWipe = false
     @State private var blackCircleRadius: CGFloat = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height) * 0.6
@@ -501,6 +502,8 @@ struct IntroScreenView: View {
     
     private func startPulseCycle() {
         guard !screenTapped else { return }
+        // Pause pulsing while the center star is growing during waves
+        if wavesStarted { return }
         // Expand to large
         withAnimation(.easeInOut(duration: 2.2)) {
             pulseScale = 1.8
@@ -508,6 +511,7 @@ struct IntroScreenView: View {
         // Immediately shrink (no pause)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
             guard !self.screenTapped else { return }
+            if self.wavesStarted { return }
             withAnimation(.easeInOut(duration: 2.2)) {
                 self.pulseScale = 1.0
             }
@@ -543,7 +547,12 @@ struct IntroScreenView: View {
         }
         
         // Wave 1 — first batch of stars consolidate inward, center grows faster
+        // Pause the pulse so the growing star doesn't visually shrink
         DispatchQueue.main.asyncAfter(deadline: .now() + 9.0) {
+            wavesStarted = true
+            withAnimation(.easeInOut(duration: 1.0)) {
+                pulseScale = 1.0
+            }
             withAnimation(.linear(duration: 5.0)) {
                 wave1 = true
             }
@@ -569,6 +578,11 @@ struct IntroScreenView: View {
             }
             withAnimation(.easeOut(duration: 4.0)) {
                 centerStarScale = 1.0
+            }
+            // Resume pulsing after center star finishes growing
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                self.wavesStarted = false
+                self.startPulseCycle()
             }
         }
         

@@ -40,7 +40,7 @@ struct CalendarView: View {
             
             VStack(spacing: 0) {
                 topBar
-                Spacer().frame(height: 80)
+                Spacer().frame(height: 40)
                 graphArea
                 Spacer()
             }
@@ -53,67 +53,108 @@ struct CalendarView: View {
     // MARK: - Top Bar
     
     private var topBar: some View {
-        HStack {
-            Button(action: onTreasureChest) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.65, green: 0.45, blue: 0.25),
-                                    Color(red: 0.45, green: 0.3, blue: 0.18)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 40, height: 30)
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.6, green: 0.4, blue: 0.2),
-                                    Color(red: 0.4, green: 0.25, blue: 0.15)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 40, height: 10)
-                        .offset(y: -15)
-                }
-            }
-            .frame(width: 50, height: 50)
-            .offset(y: 40)
-            
-            Spacer()
-            
+        VStack(spacing: 0) {
+            // Title centered under dynamic island
             Text("Calendar View")
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(Color.black)
-                .offset(y: 40)
-            
-            Spacer()
-            
-            Button("Back") {
-                onBack()
+                .frame(maxWidth: .infinity)
+                .padding(.top, 10)
+
+            // Treasure chest and man icon row
+            HStack {
+                Button(action: onTreasureChest) {
+                    ZStack {
+                        // Chest body
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.55, green: 0.35, blue: 0.18),
+                                        Color(red: 0.35, green: 0.20, blue: 0.10)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 44, height: 28)
+                        // Chest body outline
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color(red: 0.3, green: 0.18, blue: 0.08), lineWidth: 1.5)
+                            .frame(width: 44, height: 28)
+                        // Horizontal band
+                        Rectangle()
+                            .fill(Color(red: 0.70, green: 0.55, blue: 0.25))
+                            .frame(width: 44, height: 4)
+                        // Lid
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.65, green: 0.45, blue: 0.22),
+                                        Color(red: 0.50, green: 0.32, blue: 0.15)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 46, height: 14)
+                            .offset(y: -16)
+                        // Lid outline
+                        RoundedRectangle(cornerRadius: 5)
+                            .stroke(Color(red: 0.3, green: 0.18, blue: 0.08), lineWidth: 1.5)
+                            .frame(width: 46, height: 14)
+                            .offset(y: -16)
+                        // Lid band
+                        Rectangle()
+                            .fill(Color(red: 0.70, green: 0.55, blue: 0.25))
+                            .frame(width: 46, height: 3)
+                            .offset(y: -16)
+                        // Keyhole clasp
+                        Circle()
+                            .fill(Color(red: 0.80, green: 0.65, blue: 0.20))
+                            .frame(width: 8, height: 8)
+                            .offset(y: -8)
+                        Circle()
+                            .fill(Color(red: 0.35, green: 0.22, blue: 0.10))
+                            .frame(width: 4, height: 4)
+                            .offset(y: -8)
+                        // Corner studs
+                        Circle()
+                            .fill(Color(red: 0.80, green: 0.65, blue: 0.20))
+                            .frame(width: 4, height: 4)
+                            .offset(x: -18, y: -10)
+                        Circle()
+                            .fill(Color(red: 0.80, green: 0.65, blue: 0.20))
+                            .frame(width: 4, height: 4)
+                            .offset(x: 18, y: -10)
+                        Circle()
+                            .fill(Color(red: 0.80, green: 0.65, blue: 0.20))
+                            .frame(width: 4, height: 4)
+                            .offset(x: -18, y: 10)
+                        Circle()
+                            .fill(Color(red: 0.80, green: 0.65, blue: 0.20))
+                            .frame(width: 4, height: 4)
+                            .offset(x: 18, y: 10)
+                    }
+                }
+                .frame(width: 55, height: 50)
+
+                Spacer()
+
+                // Man figure button for ColorChannelView
+                Button(action: onColorChannel) {
+                    Image("A1FF66D0-72A3-4382-B538-9EE37197DEA4_4_5005_c")
+                        .resizable()
+                        .frame(width: 25, height: 30)
+                }
+                .frame(width: 40, height: 40)
             }
-            .font(.headline)
-            .foregroundColor(Color.black)
-            .padding(.trailing, 10)
-            
-            // Man figure button for ColorChannelView
-            Button(action: onColorChannel) {
-                Image("A1FF66D0-72A3-4382-B538-9EE37197DEA4_4_5005_c")
-                    .resizable()
-                    .frame(width: 25, height: 30)
-            }
-            .frame(width: 40, height: 40)
-            .offset(y: 40)
+            .padding(.horizontal, 15)
+            .padding(.top, 8)
         }
-        .padding(.horizontal, 15)
-        .padding(.top, 20)
+        .padding(.top, 50)
     }
     
     // MARK: - Graph Area
@@ -178,7 +219,7 @@ struct CalendarView: View {
             }
         }
         .frame(height: 640)
-        .padding(.leading, 10)
+        .padding(.leading, 25)
         .padding(.trailing, 10)
     }
     
@@ -189,39 +230,12 @@ struct CalendarView: View {
         let pos = tokenPosition(token: token, w: geoSize.width, h: geoSize.height)
         if pos.x >= 0 && pos.x <= geoSize.width && pos.y >= 0 && pos.y <= geoSize.height {
             VStack(spacing: 2) {
-                ZStack {
-                    TokenShapeHelper.shapeView(
-                        shape: token.shape,
-                        color: ColorHelper.resolve(color: token.color, shade: token.shade)
-                    )
-                    if token.showALabel && token.showILabel && token.showMLabel {
-                        TokenShapeHelper.strokeView(shape: token.shape, lineWidth: 1, color: CoinTokenView.goldDark)
-                            .scaleEffect(0.93)
-                    }
-                    VStack(spacing: 0) {
-                        if token.showALabel {
-                            Text("A")
-                                .font(.system(size: 2, weight: .bold))
-                                .foregroundColor(CoinTokenView.goldLabel)
-                        }
-                        if token.showILabel {
-                            Text("I")
-                                .font(.system(size: 2, weight: .bold))
-                                .foregroundColor(CoinTokenView.goldLabel)
-                        }
-                        if token.showMLabel {
-                            Text("M")
-                                .font(.system(size: 2, weight: .bold))
-                                .foregroundColor(CoinTokenView.goldLabel)
-                        }
-                    }
-                }
-                .frame(width: 16, height: 16)
-                .shadow(color: Color.black.opacity(0.3), radius: 2)
-                
+                TokenBadgeView(token: token, size: 16, labelSize: 2)
+                    .shadow(color: .black.opacity(0.3), radius: 2)
+
                 Text(String(token.id.suffix(4)))
                     .font(.system(size: 5))
-                    .foregroundColor(Color.black.opacity(0.6))
+                    .foregroundColor(.black.opacity(0.6))
             }
             .position(x: pos.x, y: pos.y)
         }
@@ -232,9 +246,11 @@ struct CalendarView: View {
     private func tokenPosition(token: DepositedToken, w: CGFloat, h: CGFloat) -> CGPoint {
         let cal = Calendar.current
         let now = Date()
-        
-        // X: which day column (0=Today on line 1, 1=Sat on line 2, etc.)
-        let daysSinceToday = cal.dateComponents([.day], from: token.depositedAt, to: now).day ?? 0
+
+        // X: which day column — compare calendar dates (startOfDay), not elapsed time
+        let todayStart = cal.startOfDay(for: now)
+        let tokenStart = cal.startOfDay(for: token.depositedAt)
+        let daysSinceToday = cal.dateComponents([.day], from: tokenStart, to: todayStart).day ?? 0
         let dayIndex = CGFloat(min(max(daysSinceToday, 0), 6))
         let colW = w / 7.0
         let x = (dayIndex + 1) * colW // Position on vertical line (Today on line 1)

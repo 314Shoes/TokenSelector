@@ -22,6 +22,7 @@
 		AA000013 /* CoinTokenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000013 /* CoinTokenView.swift */; };
 		AA000014 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000014 /* CalendarView.swift */; };
 		AA000015 /* ColorChannelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000015 /* ColorChannelView.swift */; };
+		AA000016 /* TokenBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000016 /* TokenBadgeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		AB000013 /* CoinTokenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTokenView.swift; sourceTree = "<group>"; };
 		AB000014 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		AB000015 /* ColorChannelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorChannelView.swift; sourceTree = "<group>"; };
+		AB000016 /* TokenBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenBadgeView.swift; sourceTree = "<group>"; };
 		AC000001 /* TokenSelector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TokenSelector.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -87,6 +89,7 @@
 				AB000013 /* CoinTokenView.swift */,
 				AB000014 /* CalendarView.swift */,
 				AB000015 /* ColorChannelView.swift */,
+				AB000016 /* TokenBadgeView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -191,6 +194,7 @@
 				AA000013 /* CoinTokenView.swift in Sources */,
 				AA000014 /* CalendarView.swift in Sources */,
 				AA000015 /* ColorChannelView.swift in Sources */,
+					AA000016 /* TokenBadgeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

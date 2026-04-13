@@ -33,47 +33,20 @@ struct UseTokenView: View {
                 // 4 quadrants
                 VStack(spacing: 0) {
                     HStack(spacing: 0) {
-                        // Top-left: Blue - "Apply to Self"
-                        ZStack {
-                            Color(red: 0.231, green: 0.510, blue: 0.965)
-                            Text("Apply to Self")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                        }
-                        .frame(width: w, height: h)
-                        
-                        // Top-right: Green - "Sync with Others"
-                        ZStack {
-                            Color(red: 0.133, green: 0.773, blue: 0.369)
-                            Text("Sync with Others")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                        }
-                        .frame(width: w, height: h)
+                        quadrant(color: ColorHelper.resolve(color: .blue, shade: .white),
+                                 label: "Apply to Self", labelColor: .white)
+                            .frame(width: w, height: h)
+                        quadrant(color: ColorHelper.resolve(color: .green, shade: .white),
+                                 label: "Sync with Others", labelColor: .white)
+                            .frame(width: w, height: h)
                     }
-                    
                     HStack(spacing: 0) {
-                        // Bottom-left: Red - "Discover Patterns"
-                        ZStack {
-                            Color(red: 0.937, green: 0.267, blue: 0.267)
-                            Text("Discover Patterns")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                        }
-                        .frame(width: w, height: h)
-                        
-                        // Bottom-right: White - "Deposit to Treasure Chest"
-                        ZStack {
-                            Color.white
-                            Text("Deposit to Treasure Chest")
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.black)
-                        }
-                        .frame(width: w, height: h)
+                        quadrant(color: ColorHelper.resolve(color: .red, shade: .white),
+                                 label: "Discover Patterns", labelColor: .white)
+                            .frame(width: w, height: h)
+                        quadrant(color: .white,
+                                 label: "Deposit to Treasure Chest", labelColor: .black)
+                            .frame(width: w, height: h)
                     }
                 }
                 
@@ -85,8 +58,11 @@ struct UseTokenView: View {
                 
                 // Draggable token in center
                 if tokenVisible {
+                    let centroidY = TokenShapeHelper.centroidAnchor(for: shapeChoice).y
+                    let visualCenterOffset = (centroidY - 0.5) * 124
                     coinTokenView
                         .frame(width: 124, height: 124)
+                        .offset(y: -visualCenterOffset)
                         .contentShape(Rectangle())
                         .scaleEffect(tokenScale)
                         .offset(
@@ -120,8 +96,20 @@ struct UseTokenView: View {
         }
     }
     
+    // MARK: - Quadrant
+
+    private func quadrant(color: Color, label: String, labelColor: Color) -> some View {
+        ZStack {
+            color
+            Text(label)
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundColor(labelColor)
+        }
+    }
+
     // MARK: - 3D Coin
-    
+
     private var coinTokenView: some View {
         CoinTokenView(
             shade: shade,
@@ -163,7 +151,7 @@ struct UseTokenView: View {
         // but only if the token is actually touching that quadrant
         if touchesBottomRight && (tokenCenterX > midX || tokenCenterY > midY) {
             // Bottom-right quadrant (White - Deposit to Treasure Chest)
-            startDisappearAnimationAndRestart()
+            startDisappearAnimation(onComplete: onDeposit)
         } else if touchesTopLeft && tokenCenterX <= midX && tokenCenterY <= midY {
             // Top-left quadrant (Blue - Apply to Self)
             // Future functionality
@@ -172,27 +160,19 @@ struct UseTokenView: View {
             // Future functionality
         } else if touchesBottomLeft && tokenCenterX <= midX && tokenCenterY > midY {
             // Bottom-left quadrant (Red - Discover Patterns)
-            startDisappearAnimationAndNavigateToCalendar()
+            startDisappearAnimation(onComplete: onCalendar)
         } else if touchesBottomRight {
-            startDisappearAnimationAndRestart()
+            startDisappearAnimation(onComplete: onDeposit)
         } else if touchesTopLeft {
             // Future functionality
         } else if touchesTopRight {
             // Future functionality
         } else if touchesBottomLeft {
-            startDisappearAnimationAndNavigateToCalendar()
+            startDisappearAnimation(onComplete: onCalendar)
         }
         // If no quadrant touched (token still in center), do nothing
     }
     
-    private func startDisappearAnimationAndRestart() {
-        startDisappearAnimation(onComplete: onDeposit)
-    }
-
-    private func startDisappearAnimationAndNavigateToCalendar() {
-        startDisappearAnimation(onComplete: onCalendar)
-    }
-
     private func startDisappearAnimation(onComplete: @escaping () -> Void) {
         isDisappearing = true
 

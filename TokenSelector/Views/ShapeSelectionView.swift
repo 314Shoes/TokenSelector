@@ -31,6 +31,14 @@ struct ShapeSelectionView: View {
         ColorHelper.resolve(color: colorChoice, shade: shade)
     }
 
+    private var outlineColor: Color {
+        shade == .black ? .white : .black
+    }
+
+    private var crossColor: Color {
+        shade == .black ? .black : .white
+    }
+
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width / 2
@@ -44,34 +52,36 @@ struct ShapeSelectionView: View {
                             bgColor
                             SquareShape()
                                 .fill(bgColor)
-                                .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                .frame(width: min(w, h) * 0.72, height: min(w, h) * 0.72)
                                 .opacity(shapesOpacity)
                                 .overlay(
                                     SquareShape()
-                                        .stroke(Color.black, lineWidth: 3)
-                                        .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                        .stroke(outlineColor, lineWidth: 3)
+                                        .frame(width: min(w, h) * 0.72, height: min(w, h) * 0.72)
                                         .opacity(shapesOpacity)
                                 )
+                                .offset(y: 40)
                                 .contentShape(SquareShape())
                                 .gesture(holdGesture(for: .square))
                         }
                         .frame(width: w, height: h)
 
-                        // Upper-right: Circle
+                        // Upper-right: Triangle Down
                         ZStack {
                             bgColor
-                            Circle()
+                            TriangleDown()
                                 .fill(bgColor)
                                 .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
                                 .opacity(shapesOpacity)
                                 .overlay(
-                                    Circle()
-                                        .stroke(Color.black, lineWidth: 3)
+                                    TriangleDown()
+                                        .stroke(outlineColor, lineWidth: 3)
                                         .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
                                         .opacity(shapesOpacity)
                                 )
-                                .contentShape(Circle())
-                                .gesture(holdGesture(for: .circle))
+                                .offset(y: 60)
+                                .contentShape(TriangleDown())
+                                .gesture(holdGesture(for: .triangleDown))
                         }
                         .frame(width: w, height: h)
                     }
@@ -86,30 +96,32 @@ struct ShapeSelectionView: View {
                                 .opacity(shapesOpacity)
                                 .overlay(
                                     TriangleUp()
-                                        .stroke(Color.black, lineWidth: 3)
+                                        .stroke(outlineColor, lineWidth: 3)
                                         .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
                                         .opacity(shapesOpacity)
                                 )
+                                .offset(y: -60)
                                 .contentShape(TriangleUp())
                                 .gesture(holdGesture(for: .triangleUp))
                         }
                         .frame(width: w, height: h)
 
-                        // Lower-right: Triangle Down
+                        // Lower-right: Circle
                         ZStack {
                             bgColor
-                            TriangleDown()
+                            Circle()
                                 .fill(bgColor)
-                                .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                .frame(width: min(w, h) * 0.72, height: min(w, h) * 0.72)
                                 .opacity(shapesOpacity)
                                 .overlay(
-                                    TriangleDown()
-                                        .stroke(Color.black, lineWidth: 3)
-                                        .frame(width: min(w, h) * 0.88, height: min(w, h) * 0.88)
+                                    Circle()
+                                        .stroke(outlineColor, lineWidth: 3)
+                                        .frame(width: min(w, h) * 0.72, height: min(w, h) * 0.72)
                                         .opacity(shapesOpacity)
                                 )
-                                .contentShape(TriangleDown())
-                                .gesture(holdGesture(for: .triangleDown))
+                                .offset(y: -50)
+                                .contentShape(Circle())
+                                .gesture(holdGesture(for: .circle))
                         }
                         .frame(width: w, height: h)
                     }
@@ -123,7 +135,7 @@ struct ShapeSelectionView: View {
 
                 // Black cross — expands from center dot
                 CrossShape()
-                    .stroke(Color.black, lineWidth: 2)
+                    .stroke(crossColor, lineWidth: 2)
                     .frame(width: geo.size.width * crossScale, height: geo.size.height * crossScale)
                     .position(x: geo.size.width / 2, y: geo.size.height / 2)
                     .allowsHitTesting(false)
@@ -216,15 +228,31 @@ struct ShapeSelectionView: View {
         }
     }
 
+    private func shapeScale(for shape: ShapeChoice) -> CGFloat {
+        switch shape {
+        case .square, .circle: return 0.72
+        case .triangleUp, .triangleDown: return 0.88
+        }
+    }
+
+    private func shapeOffset(for shape: ShapeChoice) -> CGFloat {
+        switch shape {
+        case .square:       return 40
+        case .triangleDown: return 60
+        case .triangleUp:   return -60
+        case .circle:       return -50
+        }
+    }
+
     private func showToken(_ shape: ShapeChoice) {
         pickedShape = shape
         let w = viewSize.width / 2
         let h = viewSize.height / 2
         let origin = quadrantOrigin(for: shape)
-        let shapeSize = min(w, h) * 0.88
+        let shapeSize = min(w, h) * shapeScale(for: shape)
 
         tokenX = origin.x
-        tokenY = origin.y
+        tokenY = origin.y + shapeOffset(for: shape)
         tokenSize = shapeSize
         tokenRotation = 0
 
@@ -337,9 +365,9 @@ struct ShapeSelectionView: View {
         let h = viewSize.height / 2
         switch shape {
         case .square:       return CGPoint(x: w / 2, y: h / 2)
-        case .circle:       return CGPoint(x: w + w / 2, y: h / 2)
+        case .triangleDown: return CGPoint(x: w + w / 2, y: h / 2)
         case .triangleUp:   return CGPoint(x: w / 2, y: h + h / 2)
-        case .triangleDown: return CGPoint(x: w + w / 2, y: h + h / 2)
+        case .circle:       return CGPoint(x: w + w / 2, y: h + h / 2)
         }
     }
 }

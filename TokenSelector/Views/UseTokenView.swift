@@ -34,18 +34,18 @@ struct UseTokenView: View {
                 VStack(spacing: 0) {
                     HStack(spacing: 0) {
                         quadrant(color: ColorHelper.resolve(color: .blue, shade: .white),
-                                 label: "Apply to Self", labelColor: .white)
+                                 label: "Apply\nto Self", labelColor: .white)
                             .frame(width: w, height: h)
                         quadrant(color: ColorHelper.resolve(color: .green, shade: .white),
-                                 label: "Sync with Others", labelColor: .white)
+                                 label: "Sync with\nOthers", labelColor: .white)
                             .frame(width: w, height: h)
                     }
                     HStack(spacing: 0) {
                         quadrant(color: ColorHelper.resolve(color: .red, shade: .white),
-                                 label: "Discover Patterns", labelColor: .white)
+                                 label: "Discover\nPatterns", labelColor: .white)
                             .frame(width: w, height: h)
                         quadrant(color: .white,
-                                 label: "Deposit to Treasure Chest", labelColor: .black)
+                                 label: "Deposit\nto Treasure\nChest", labelColor: .black)
                             .frame(width: w, height: h)
                     }
                 }
@@ -102,9 +102,10 @@ struct UseTokenView: View {
         ZStack {
             color
             Text(label)
-                .font(.title3)
+                .font(.title)
                 .fontWeight(.semibold)
                 .foregroundColor(labelColor)
+                .multilineTextAlignment(.center)
         }
     }
 
@@ -179,15 +180,15 @@ struct UseTokenView: View {
         let onX = currentFlipAxis == 0
 
         let stages: [(duration: Double, scale: CGFloat, primaryFrac: Double)] = [
-            (0.60, 0.80, 1.0),
-            (0.45, 0.60, 0.75),
-            (0.33, 0.40, 0.50),
-            (0.23, 0.20, 0.25),
-            (0.15, 0.01, 0.0),
+            (1.20, 0.80, 1.0),
+            (0.90, 0.60, 0.75),
+            (0.66, 0.40, 0.50),
+            (0.46, 0.20, 0.25),
+            (0.30, 0.01, 0.0),
         ]
 
         var delay: Double = 0
-        let spin: Double = 360
+        let spin: Double = 180
 
         for stage in stages {
             let d = delay
@@ -195,7 +196,7 @@ struct UseTokenView: View {
             let addY = onX ? spin * (1.0 - stage.primaryFrac) : spin * stage.primaryFrac
 
             DispatchQueue.main.asyncAfter(deadline: .now() + d) {
-                withAnimation(.linear(duration: stage.duration)) {
+                withAnimation(.easeInOut(duration: stage.duration)) {
                     self.xAngle += addX
                     self.yAngle += addY
                     self.tokenScale = stage.scale
@@ -209,51 +210,25 @@ struct UseTokenView: View {
         }
     }
     
-    // MARK: - Appear Animation (reverse of disappear: fast+small → slow+big)
-    
+    // MARK: - Appear Animation (reverse of disappear — single smooth animation)
+
     private func startAppearAnimation() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             tokenVisible = true
             tokenScale = 0.01
-            
-            // Start from where disappear would end
-            let startFlip: Double = 1745  // Cumulative from disappear
-            let startAxis: Double = 210
-            let endAxis: Double = 90
-            
-            let stages = FlipAnimationState.appearStages
-            let stageCount = Double(stages.count)
-            
-            // Calculate exact flip reduction per stage to reach 0 at end
-            let flipReductionPerStage = startFlip / stageCount
-            
-            var delay: Double = 0
-            var currentFlip: Double = startFlip
-            
-            for (i, stage) in stages.enumerated() {
-                let d = delay
-                let progress = Double(i + 1) / stageCount
-                let axisAngle = startAxis + (endAxis - startAxis) * progress
-                let axisRad = axisAngle * .pi / 180
-                
-                // Reduce flip amount each stage (will reach 0 at final stage)
-                currentFlip = max(currentFlip - flipReductionPerStage, 0)
-                
-                let targetX = currentFlip * cos(axisRad)
-                let targetY = currentFlip * sin(axisRad)
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + d) {
-                    withAnimation(.linear(duration: stage.duration)) {
-                        self.xAngle = targetX
-                        self.yAngle = targetY
-                        self.tokenScale = stage.scale
-                    }
-                }
-                delay += stage.duration
+            xAngle = 720
+            yAngle = 540
+
+            // Single smooth animation: spin down to 0 and scale up to 1
+            let totalDuration: Double = 3.5
+            withAnimation(.easeOut(duration: totalDuration)) {
+                self.xAngle = 0
+                self.yAngle = 0
+                self.tokenScale = 1.0
             }
-            
-            // Start alternating axis flip (already at 0,0 so no reset needed)
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.1) {
+
+            // Start idle flip after appear completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration + 0.1) {
                 self.startFlipSequence()
             }
         }

@@ -160,7 +160,7 @@ struct CoinTokenView: View {
 // MARK: - Shared Flip Animation Logic
 
 enum FlipAnimationState {
-    static let flipDuration: Double = 3.0
+    static let flipDuration: Double = 5.0
 
     struct AnimationStage {
         let duration: Double
@@ -168,10 +168,10 @@ enum FlipAnimationState {
     }
 
     static let appearStages: [AnimationStage] = [
-        AnimationStage(duration: 0.20, scale: 0.20),
-        AnimationStage(duration: 0.36, scale: 0.40),
-        AnimationStage(duration: 0.56, scale: 0.60),
-        AnimationStage(duration: 0.76, scale: 0.80),
-        AnimationStage(duration: 1.00, scale: 1.00),
+        AnimationStage(duration: 0.40, scale: 0.20),
+        AnimationStage(duration: 0.72, scale: 0.40),
+        AnimationStage(duration: 1.12, scale: 0.60),
+        AnimationStage(duration: 1.52, scale: 0.80),
+        AnimationStage(duration: 2.00, scale: 1.00),
     ]
 }

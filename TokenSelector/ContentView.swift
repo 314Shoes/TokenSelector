@@ -1,4 +1,5 @@
 import SwiftUI
+import AVKit
 
 enum AppScreen {
     case intro
@@ -238,6 +239,55 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Video Player (AVPlayerLayer, centered, aspect-fill)
+
+struct LoopingVideoView: UIViewRepresentable {
+    let player: AVPlayer
+
+    func makeUIView(context: Context) -> UIView {
+        PlayerUIView(player: player)
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+
+    private class PlayerUIView: UIView {
+        private let playerLayer = AVPlayerLayer()
+
+        init(player: AVPlayer) {
+            super.init(frame: .zero)
+            playerLayer.player = player
+            playerLayer.videoGravity = .resize
+            layer.addSublayer(playerLayer)
+            clipsToBounds = true
+        }
+
+        required init?(coder: NSCoder) { fatalError() }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            // Video: 784x1168, glow centroid at pixel (395, 560)
+            let vidW: CGFloat = 784
+            let vidH: CGFloat = 1168
+            let brightX: CGFloat = 398
+            let brightY: CGFloat = 532
+
+            let viewW = bounds.width
+            let viewH = bounds.height
+
+            // Scale so video covers entire view (aspect-fill)
+            let scale = max(viewW / vidW, viewH / vidH)
+            let scaledW = vidW * scale
+            let scaledH = vidH * scale
+
+            // Position so the bright pixel lands at the view center
+            let originX = viewW / 2 - brightX * scale
+            let originY = viewH / 2 - brightY * scale
+
+            playerLayer.frame = CGRect(x: originX, y: originY, width: scaledW, height: scaledH)
+        }
+    }
+}
+
 // MARK: - Intro Screen View
 
 struct IntroScreenView: View {
@@ -255,6 +305,9 @@ struct IntroScreenView: View {
     @State private var wave2 = false
     @State private var wave3 = false
     @State private var wavesStarted = false
+    // Background video
+    @State private var showVideo = false
+    @State private var videoPlayer: AVPlayer?
     // Black circle wipe for non-star taps
     @State private var showBlackCircleWipe = false
     @State private var blackCircleRadius: CGFloat = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height) * 0.6
@@ -399,6 +452,13 @@ struct IntroScreenView: View {
                         .ignoresSafeArea()
                     )
                 
+                // Background converge video
+                if showVideo, let player = videoPlayer {
+                    LoopingVideoView(player: player)
+                        .ignoresSafeArea()
+                        .allowsHitTesting(false)
+                }
+
                 if showStars {
                     ZStack {
                         ForEach(0..<stars.count, id: \.self) { i in
@@ -523,6 +583,17 @@ struct IntroScreenView: View {
     }
     
     private func startIntroSequence() {
+        // Start background video 1 second after stars appear (t=3.0s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            if let url = Bundle.main.url(forResource: "UniverseConverge_10sec_v001", withExtension: "mp4") {
+                let player = AVPlayer(url: url)
+                player.isMuted = true
+                self.videoPlayer = player
+                self.showVideo = true
+                player.play()
+            }
+        }
+
         // Show stars after 2 seconds
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             withAnimation(.easeIn(duration: 8.0)) {

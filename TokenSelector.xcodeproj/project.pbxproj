@@ -23,6 +23,7 @@
 		AA000014 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000014 /* CalendarView.swift */; };
 		AA000015 /* ColorChannelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000015 /* ColorChannelView.swift */; };
 		AA000016 /* TokenBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB000016 /* TokenBadgeView.swift */; };
+		AA000017 /* UniverseConverge_10sec_v001.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = AB000017 /* UniverseConverge_10sec_v001.mp4 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 		AB000014 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		AB000015 /* ColorChannelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorChannelView.swift; sourceTree = "<group>"; };
 		AB000016 /* TokenBadgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenBadgeView.swift; sourceTree = "<group>"; };
+		AB000017 /* UniverseConverge_10sec_v001.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = UniverseConverge_10sec_v001.mp4; sourceTree = "<group>"; };
 		AC000001 /* TokenSelector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TokenSelector.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -72,6 +74,7 @@
 				AE000003 /* Views */,
 				AE000004 /* Helpers */,
 				AB000003 /* Assets.xcassets */,
+				AB000017 /* UniverseConverge_10sec_v001.mp4 */,
 			);
 			path = TokenSelector;
 			sourceTree = "<group>";
@@ -170,6 +173,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000003 /* Assets.xcassets in Resources */,
+				AA000017 /* UniverseConverge_10sec_v001.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
